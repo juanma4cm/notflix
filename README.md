@@ -9,45 +9,36 @@ Un stack completo de Docker para gestionar tu servidor multimedia personal. Incl
 - Servidor de streaming multimedia personal
 - Interfaz tipo Netflix
 - Organización automática de tu biblioteca
-- Acceso: [http://localhost:32400/web](http://localhost:32400/web)
 
 ### 🎬 Radarr
 
 - Gestión automatizada de películas
 - Monitorización de nuevos lanzamientos
 - Organización automática de archivos
-- Acceso: [http://localhost:7878](http://localhost:7878)
 
 ### 📺 Sonarr
 
 - Gestión automatizada de series de TV
 - Seguimiento de episodios
 - Descarga automática de nuevos episodios
-- Acceso: [http://localhost:8989](http://localhost:8989)
 
 ### 🔍 Prowlarr
 
 - Gestor centralizado de indexadores
 - Integración con Radarr y Sonarr
 - Búsqueda unificada
-- Acceso: [http://localhost:9696](http://localhost:9696)
 
 ### ⚡ FlareSolverr
 
 - Bypass de protecciones Cloudflare
 - Soporte para indexadores protegidos
 - Resolución automática de captchas
-- Acceso: [http://localhost:8191](http://localhost:8191)
 
 ### 🌊 qBittorrent
 
 - Cliente torrent con interfaz web
 - Gestión de descargas
 - Integración con Radarr/Sonarr
-- Acceso: [http://localhost:8080](http://localhost:8080)
-- Credenciales por defecto:
-  - Usuario: `admin`
-  - Contraseña: `adminadmin`
 
 ## 🚀 Inicio Rápido
 
