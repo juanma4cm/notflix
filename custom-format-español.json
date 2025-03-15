@@ -1,0 +1,61 @@
+{
+  "name": "Español",
+  "includeCustomFormatWhenRenaming": true,
+  "specifications": [
+    {
+      "name": "Español",
+      "implementation": "LanguageSpecification",
+      "negate": false,
+      "required": false,
+      "fields": {
+        "value": 3,
+        "exceptLanguage": false
+      }
+    },
+    {
+      "name": "Título - ESP",
+      "implementation": "ReleaseTitleSpecification",
+      "negate": false,
+      "required": false,
+      "fields": {
+        "value": "(?i)ESP(?-i)"
+      }
+    },
+    {
+      "name": "Título - Español",
+      "implementation": "ReleaseTitleSpecification",
+      "negate": false,
+      "required": false,
+      "fields": {
+        "value": "(?i)Español(?-i)"
+      }
+    },
+    {
+      "name": "Título - Castellano",
+      "implementation": "ReleaseTitleSpecification",
+      "negate": false,
+      "required": false,
+      "fields": {
+        "value": "(?i)castellano(?-i)"
+      }
+    },
+    {
+      "name": "Título - Spanish ",
+      "implementation": "ReleaseTitleSpecification",
+      "negate": false,
+      "required": false,
+      "fields": {
+        "value": "(?i)Spanish(?-i)"
+      }
+    },
+    {
+      "name": "Título - Spa",
+      "implementation": "ReleaseTitleSpecification",
+      "negate": false,
+      "required": false,
+      "fields": {
+        "value": "(?i)Spa(?-i)"
+      }
+    }
+  ]
+}

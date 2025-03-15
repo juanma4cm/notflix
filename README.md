@@ -72,7 +72,8 @@ make up
 ## 📁 Estructura de Directorios Recomendada
 
 ```bash
-media-server-stack/
+notflix/
+├── custom-format-español.json
 ├── docker-compose.yml
 ├── Makefile
 ├── README.md
@@ -217,6 +218,9 @@ media-server-stack/
      - Añade qBittorrent (igual que en Radarr)
   3. Settings > General
      - Añade Prowlarr como indexador
+
+> **Nota**: custom-format-español.json es un custom format tanto para Radarr y Sonarr, se encuentra en la raiz del proyecto.
+Ir a Settings > Custom Formats > Add Custom Format > Import Custom Format > Seleccionar el contenido del archivo custom-format-español.json > Import
 
 ### 5️⃣ Plex
 
