@@ -222,6 +222,8 @@ notflix/
 > **Nota**: custom-format-español.json es un custom format tanto para Radarr y Sonarr, se encuentra en la raiz del proyecto.
 Ir a Settings > Custom Formats > Add Custom Format > Import Custom Format > Seleccionar el contenido del archivo custom-format-español.json > Import
 
+- [https://trash-guides.info/Radarr/Tips/How-to-setup-language-custom-formats/#how-to-setup-language-custom-formats](https://trash-guides.info/Radarr/Tips/How-to-setup-language-custom-formats/#how-to-setup-language-custom-formats)
+
 ### 5️⃣ Plex
 
 - Accede a [http://localhost:32400/web](http://localhost:32400/web)
