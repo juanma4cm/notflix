@@ -1,7 +1,7 @@
 services:
 
   caddy:
-    image: caddy:2-alpine
+    image: caddy:${CADDY_VERSION:-2-alpine}
     container_name: caddy
     ports:
       - "80:80"
@@ -28,7 +28,7 @@ services:
       - media-network
 
   qbittorrent:
-    image: linuxserver/qbittorrent:latest
+    image: lscr.io/linuxserver/qbittorrent:${QBITTORRENT_VERSION:-latest}
     container_name: qbittorrent
     environment:
       - PUID=${PUID:-1000}
@@ -53,7 +53,7 @@ services:
       start_period: 30s
 
   prowlarr:
-    image: linuxserver/prowlarr:latest
+    image: lscr.io/linuxserver/prowlarr:${PROWLARR_VERSION:-latest}
     container_name: prowlarr
     environment:
       - PUID=${PUID:-1000}
@@ -82,7 +82,7 @@ services:
       - media-network
 
   radarr:
-    image: linuxserver/radarr:latest
+    image: lscr.io/linuxserver/radarr:${RADARR_VERSION:-latest}
     container_name: radarr
     environment:
       - PUID=${PUID:-1000}
@@ -103,7 +103,7 @@ services:
       start_period: 60s
 
   sonarr:
-    image: linuxserver/sonarr:latest
+    image: lscr.io/linuxserver/sonarr:${SONARR_VERSION:-latest}
     container_name: sonarr
     environment:
       - PUID=${PUID:-1000}
@@ -124,7 +124,7 @@ services:
       start_period: 60s
 
   plex:
-    image: linuxserver/plex:latest
+    image: lscr.io/linuxserver/plex:${PLEX_VERSION:-latest}
     container_name: plex-server
     environment:
       - PUID=${PUID:-1000}
@@ -143,6 +143,59 @@ services:
       - ./plex/transcode:/transcode
       - ./downloads/movies:/movies
       - ./downloads/tv:/tv
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  overseerr:
+    image: lscr.io/linuxserver/overseerr:${OVERSEERR_VERSION:-latest}
+    container_name: overseerr
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TZ:-Europe/Madrid}
+    volumes:
+      - ./overseerr/config:/config
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  recyclarr:
+    image: ghcr.io/recyclarr/recyclarr:latest
+    container_name: recyclarr
+    user: "${PUID:-1000}:${PGID:-1000}"
+    volumes:
+      - ./recyclarr:/config
+    env_file: .env
+    environment:
+      - TZ=${TZ:-Europe/Madrid}
+    restart: "no"
+    networks:
+      - media-network
+
+  ntfy:
+    image: binwiederhier/ntfy:latest
+    container_name: ntfy
+    command: serve --config /etc/ntfy/server.yml
+    volumes:
+      - ./ntfy/server.yml:/etc/ntfy/server.yml:ro
+      - ./ntfy/data:/var/lib/ntfy
+    environment:
+      - TZ=${TZ:-Europe/Madrid}
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  diun:
+    image: crazymax/diun:latest
+    container_name: diun
+    command: serve
+    volumes:
+      - ./diun/diun.yml:/diun.yml:ro
+      - ./diun/data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - TZ=${TZ:-Europe/Madrid}
     restart: unless-stopped
     networks:
       - media-network
