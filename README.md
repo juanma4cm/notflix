@@ -34,9 +34,14 @@ cp .env.example .env
 Editar `.env` con los valores del servidor:
 
 ```bash
-# Obtener PUID y PGID del usuario que ejecuta Docker:
+# PUID y PGID del usuario que ejecuta Docker:
 id -u   # → PUID
 id -g   # → PGID
+
+# Generar API keys para los servicios Arr:
+echo "RADARR_API_KEY=$(openssl rand -hex 16)"
+echo "SONARR_API_KEY=$(openssl rand -hex 16)"
+echo "PROWLARR_API_KEY=$(openssl rand -hex 16)"
 ```
 
 ### 2. Crear estructura de directorios
@@ -55,13 +60,12 @@ tailscale ip -4
 
 ### 4. Liberar el puerto 53 en Ubuntu (una vez)
 
-`systemd-resolved` ocupa el puerto 53 por defecto. Hay que liberar el stub listener:
+`systemd-resolved` ocupa el puerto 53 por defecto:
 
 ```bash
 sudo sed -i 's/#DNSStubListener=yes/DNSStubListener=no/' /etc/systemd/resolved.conf
 sudo systemctl restart systemd-resolved
-# Verificar que el puerto está libre:
-sudo ss -tulpn | grep ':53'
+sudo ss -tulpn | grep ':53'   # verificar que el puerto está libre
 ```
 
 ### 5. Iniciar el stack
@@ -69,6 +73,11 @@ sudo ss -tulpn | grep ':53'
 ```bash
 make up
 ```
+
+`make up` hace tres cosas en orden:
+1. Siembra los `config.xml` en los servicios Arr (con las API keys del `.env`) si no existen
+2. Levanta todos los servicios en background
+3. El contenedor `provisioner` arranca automáticamente cuando todos los servicios están healthy, y configura las interconexiones vía API
 
 ### 6. Configurar Tailscale Split DNS (una vez por tailnet)
 
@@ -79,8 +88,6 @@ En el panel de Tailscale (`login.tailscale.com/admin/dns`):
 3. **Domain:** `notflix.internal`
 4. Activar **"Restrict to domain"**
 
-A partir de aquí, cualquier dispositivo que se una a la red Tailscale resolverá `*.notflix.internal` automáticamente.
-
 Verificar desde cualquier dispositivo Tailscale:
 
 ```bash
@@ -88,54 +95,68 @@ dig radarr.notflix.internal
 # Debe devolver la IP Tailscale del servidor
 ```
 
+## Lo que se configura automáticamente
+
+Tras `make up`, el provisioner configura:
+
+| Configuración | Estado |
+|---|---|
+| FlareSolverr como proxy en Prowlarr | Automático |
+| Prowlarr conectado a Radarr (fullSync) | Automático |
+| Prowlarr conectado a Sonarr (fullSync) | Automático |
+| qBittorrent como download client en Radarr | Automático |
+| qBittorrent como download client en Sonarr | Automático |
+| Root folders `/movies` y `/tv` en Radarr/Sonarr | Automático |
+| Indexers en Prowlarr | Manual (requieren credenciales) |
+| Biblioteca de Plex | Manual (requiere PLEX_CLAIM token) |
+
+> **Nota sobre qBittorrent:** En el primer arranque, qBittorrent genera una contraseña temporal que aparece en los logs (`make logs-qbit`). Cámbiala en la WebUI al valor de `QBIT_PASS` del `.env` y luego ejecuta `make provision` para completar su configuración.
+
+## Reinstalación / Migración
+
+Para migrar el stack a otro servidor o reinstalar desde cero:
+
+```bash
+# 1. Copiar al nuevo servidor:
+rsync -av --exclude='downloads/' notflix/ nuevo-servidor:~/notflix/
+# Incluir también los directorios */config si quieres mantener la configuración
+
+# 2. En el nuevo servidor:
+make up
+```
+
+Si los directorios `*/config` están presentes, el provisioner detecta los `config.xml` existentes y no los sobreescribe. Las interconexiones se reconfiguran igualmente (son idempotentes).
+
 ## Comandos Make
 
 | Comando | Descripción |
 |---|---|
 | `make create-folders` | Crea la estructura de directorios |
-| `make up` | Inicia todos los servicios |
+| `make up` | Siembra configs, levanta servicios y ejecuta el provisioner |
 | `make down` | Detiene todos los servicios |
 | `make restart` | Reinicia todos los servicios |
 | `make status` | Estado de los contenedores |
+| `make provision` | Re-ejecuta el provisioner manualmente (idempotente) |
 | `make logs` | Logs de todos los servicios |
-| `make logs-<servicio>` | Logs de un servicio específico (plex, qbit, radarr, sonarr, prowlarr, flare, caddy) |
+| `make logs-<servicio>` | Logs individuales: `plex`, `qbit`, `radarr`, `sonarr`, `prowlarr`, `flare`, `caddy`, `provisioner` |
 
-## Configuración de Servicios
+## Configuración Manual Post-Arranque
 
 ### qBittorrent
 
-- Accede a http://qbittorrent.notflix.internal
-- La primera vez se genera una contraseña temporal en los logs:
+La primera vez qBittorrent genera una contraseña temporal:
 
 ```bash
 make logs-qbit
 # Buscar: "A temporary password is provided for this session: XXXXXX"
 ```
 
-- Configuración recomendada (Tools > Options > Downloads):
-  - Default Save Path: `/downloads`
-  - Keep incomplete torrents in: `/downloads/incomplete`
-  - Desactivar "Create subfolder for torrents"
+Cambiarla en Tools > Options > Web UI > Password al valor de `QBIT_PASS` del `.env`.
 
 ### Prowlarr
 
 - Accede a http://prowlarr.notflix.internal
-- FlareSolverr ya está disponible internamente en `http://flaresolverr:8191`
-- Settings > Indexer Proxies → añadir FlareSolverr con esa URL
-- Settings > Apps → añadir Radarr (`http://radarr:7878`) y Sonarr (`http://sonarr:8989`)
-
-### Radarr
-
-- Accede a http://radarr.notflix.internal
-- Settings > Media Management > Movies Folder: `/movies`
-- Settings > Download Clients → añadir qBittorrent (host: `qbittorrent`, puerto: `8080`)
-
-### Sonarr
-
-- Accede a http://sonarr.notflix.internal
-- Configuración idéntica a Radarr pero con carpeta `/tv`
-
-> **Custom Format Español:** el archivo `custom-format-español.json` de la raíz puede importarse en Radarr/Sonarr desde Settings > Custom Formats > Import.
+- Añadir indexers: Settings > Indexers (requieren cuentas en los trackers)
 
 ### Plex
 
@@ -143,11 +164,16 @@ make logs-qbit
 - Añadir bibliotecas: Movies → `/movies`, TV Shows → `/tv`
 - Settings > Remote Access > Custom server access URLs: `http://plex.notflix.internal`
 
+### Custom Format Español
+
+El archivo `custom-format-español.json` de la raíz puede importarse en Radarr/Sonarr:
+Settings > Custom Formats > Import
+
 ## Notas
 
-- Todo el tráfico entre dispositivos ya va cifrado por WireGuard (Tailscale), por eso se usa HTTP en lugar de HTTPS internamente.
-- Las IPs Tailscale son estables. Si cambia la IP del servidor, actualizar `dnsmasq/dnsmasq.conf` y reiniciar el contenedor `dnsmasq`.
-- Los directorios de configuración de servicios (`radarr/`, `sonarr/`, etc.) no están versionados. Hacer backup antes de migrar el servidor.
+- El tráfico entre dispositivos va cifrado por WireGuard (Tailscale), por eso se usa HTTP internamente.
+- Las IPs Tailscale son estables. Si cambia la del servidor, actualizar `dnsmasq/dnsmasq.conf` y reiniciar `dnsmasq` (`docker compose restart dnsmasq`).
+- Los directorios de runtime (`radarr/`, `sonarr/`, etc.) no están versionados. Incluirlos en backups antes de migrar.
 
 ## Licencia
 
