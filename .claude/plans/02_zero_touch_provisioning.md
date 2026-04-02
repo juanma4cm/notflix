@@ -1,7 +1,7 @@
 ---
 plan_id: 02
 title: Zero-Touch Provisioning
-status: pending
+status: completed
 risk_level: medium
 depends_on: 01
 ---
