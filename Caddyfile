@@ -34,3 +34,11 @@ plex.{$DOMAIN:notflix.internal} {
 		header_up X-Forwarded-Proto {scheme}
 	}
 }
+
+overseerr.{$DOMAIN:notflix.internal} {
+	reverse_proxy overseerr:5055
+}
+
+ntfy.{$DOMAIN:notflix.internal} {
+	reverse_proxy ntfy:80
+}
