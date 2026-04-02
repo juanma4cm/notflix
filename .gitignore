@@ -1,8 +1,13 @@
 .vscode/
 
+# Runtime — datos generados, no versionar
 downloads/
 plex/
 prowlarr/
 qbittorrent/
 radarr/
 sonarr/
+
+# Entorno local — contiene credenciales
+.env
+backups/
