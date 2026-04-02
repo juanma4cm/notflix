@@ -209,7 +209,7 @@ notflix/
 
 ### 4️⃣ Sonarr
 
-- Accede a [http://localhost:8989](http://localhost::)
+- Accede a [http://localhost:8989](http://localhost::8989)
 - Configuración similar a Radarr:
   1. Settings > Media Management
      - TV Folder: `/tv`
