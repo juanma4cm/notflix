@@ -8,6 +8,11 @@
 /qbittorrent/
 /radarr/
 /sonarr/
+/overseerr/
+
+# Datos de runtime de servicios con config versionada
+/ntfy/data/
+/diun/data/
 
 # Entorno local — contiene credenciales
 .env
