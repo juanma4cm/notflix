@@ -45,6 +45,12 @@ services:
     restart: unless-stopped
     networks:
       - media-network
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   prowlarr:
     image: linuxserver/prowlarr:latest
@@ -58,6 +64,12 @@ services:
     restart: unless-stopped
     networks:
       - media-network
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9696/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
@@ -83,6 +95,12 @@ services:
     restart: unless-stopped
     networks:
       - media-network
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:7878/api/v3/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   sonarr:
     image: linuxserver/sonarr:latest
@@ -98,6 +116,12 @@ services:
     restart: unless-stopped
     networks:
       - media-network
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8989/api/v3/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   plex:
     image: linuxserver/plex:latest
@@ -120,6 +144,28 @@ services:
       - ./downloads/movies:/movies
       - ./downloads/tv:/tv
     restart: unless-stopped
+    networks:
+      - media-network
+
+  provisioner:
+    build: ./provisioner
+    container_name: provisioner
+    env_file: .env
+    volumes:
+      - ./radarr/config:/config/radarr
+      - ./sonarr/config:/config/sonarr
+      - ./prowlarr/config:/config/prowlarr
+      - ./config-templates:/templates:ro
+    depends_on:
+      qbittorrent:
+        condition: service_healthy
+      prowlarr:
+        condition: service_healthy
+      radarr:
+        condition: service_healthy
+      sonarr:
+        condition: service_healthy
+    restart: "no"
     networks:
       - media-network
 
