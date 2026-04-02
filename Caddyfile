@@ -1,0 +1,36 @@
+{
+	# HTTP puro dentro de Tailscale (WireGuard ya cifra el tráfico)
+	auto_https off
+	admin off
+}
+
+radarr.{$DOMAIN:notflix.internal} {
+	reverse_proxy radarr:7878
+}
+
+sonarr.{$DOMAIN:notflix.internal} {
+	reverse_proxy sonarr:8989
+}
+
+prowlarr.{$DOMAIN:notflix.internal} {
+	reverse_proxy prowlarr:9696
+}
+
+qbittorrent.{$DOMAIN:notflix.internal} {
+	reverse_proxy qbittorrent:8080 {
+		header_up Host {upstream_hostport}
+	}
+}
+
+flaresolverr.{$DOMAIN:notflix.internal} {
+	reverse_proxy flaresolverr:8191
+}
+
+plex.{$DOMAIN:notflix.internal} {
+	reverse_proxy plex-server:32400 {
+		header_up Host {upstream_hostport}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+	}
+}
