@@ -1,12 +1,13 @@
 .vscode/
 
 # Runtime — datos generados, no versionar
-downloads/
-plex/
-prowlarr/
-qbittorrent/
-radarr/
-sonarr/
+# El prefijo / ancla las rutas a la raíz del repo
+/downloads/
+/plex/
+/prowlarr/
+/qbittorrent/
+/radarr/
+/sonarr/
 
 # Entorno local — contiene credenciales
 .env
