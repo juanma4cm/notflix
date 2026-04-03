@@ -12,9 +12,13 @@ RESET  := \033[0m
         help
 
 create-folders:
-	mkdir -p {plex,qbittorrent,radarr,sonarr,prowlarr,overseerr}/config
-	mkdir -p plex/transcode
-	mkdir -p downloads/{movies,tv,incomplete}
+	mkdir -p plex/config plex/transcode
+	mkdir -p qbittorrent/config
+	mkdir -p radarr/config
+	mkdir -p sonarr/config
+	mkdir -p prowlarr/config
+	mkdir -p overseerr/config
+	mkdir -p downloads/movies downloads/tv downloads/incomplete
 	mkdir -p dnsmasq recyclarr ntfy/data diun/data
 
 up:
