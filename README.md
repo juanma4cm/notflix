@@ -1,252 +1,237 @@
-# 🎬 Notflix - Media Server Stack
+# Notflix — Media Server Stack
 
-Un stack completo de Docker para gestionar tu servidor multimedia personal. Incluye Plex, Radarr, Sonarr y herramientas complementarias, optimizado para Apple Silicon.
+Stack Docker para servidor multimedia personal. Accesible desde cualquier dispositivo via Tailscale.
 
-## 📋 Servicios Incluidos
+## Servicios
 
-### 🎥 Plex Media Server
+| Servicio | URL | Descripción |
+|---|---|---|
+| Plex | http://plex.notflix.internal | Streaming multimedia |
+| Overseerr | http://overseerr.notflix.internal | Peticiones de contenido |
+| Radarr | http://radarr.notflix.internal | Gestión automatizada de películas |
+| Sonarr | http://sonarr.notflix.internal | Gestión automatizada de series |
+| Prowlarr | http://prowlarr.notflix.internal | Gestor centralizado de indexadores |
+| qBittorrent | http://qbittorrent.notflix.internal | Cliente torrent |
+| ntfy | http://ntfy.notflix.internal | Notificaciones push |
+| FlareSolverr | http://flaresolverr.notflix.internal | Bypass de protecciones Cloudflare |
 
-- Servidor de streaming multimedia personal
-- Interfaz tipo Netflix
-- Organización automática de tu biblioteca
+> Los dominios `*.notflix.internal` son accesibles desde cualquier dispositivo en la red Tailscale.
 
-### 🎬 Radarr
+## Prerrequisitos del Servidor
 
-- Gestión automatizada de películas
-- Monitorización de nuevos lanzamientos
-- Organización automática de archivos
+- Ubuntu Server con **Docker Engine** (v2) y **Docker Compose plugin**
+- **Tailscale** instalado y autenticado
+- `make` instalado (`sudo apt install make`)
 
-### 📺 Sonarr
+## Instalación
 
-- Gestión automatizada de series de TV
-- Seguimiento de episodios
-- Descarga automática de nuevos episodios
-
-### 🔍 Prowlarr
-
-- Gestor centralizado de indexadores
-- Integración con Radarr y Sonarr
-- Búsqueda unificada
-
-### ⚡ FlareSolverr
-
-- Bypass de protecciones Cloudflare
-- Soporte para indexadores protegidos
-- Resolución automática de captchas
-
-### 🌊 qBittorrent
-
-- Cliente torrent con interfaz web
-- Gestión de descargas
-- Integración con Radarr/Sonarr
-
-## 🚀 Inicio Rápido
-
-### Prerrequisitos
-
-- Docker Desktop para Mac (Apple Silicon)
-- Git
-- Make
-
-### Instalación
-
-1. Clona el repositorio:
+### 1. Preparar el entorno
 
 ```bash
-git clone https://github.com/tu-usuario/media-server-stack.git
-cd media-server-stack
+git clone <repo-url> notflix
+cd notflix
+cp .env.example .env
 ```
 
-2. Crea la estructura de directorios necesaria:
+Editar `.env` con los valores del servidor:
+
+```bash
+id -u   # → PUID
+id -g   # → PGID
+
+# Generar API keys:
+echo "RADARR_API_KEY=$(openssl rand -hex 16)"
+echo "SONARR_API_KEY=$(openssl rand -hex 16)"
+echo "PROWLARR_API_KEY=$(openssl rand -hex 16)"
+```
+
+### 2. Crear estructura de directorios
 
 ```bash
 make create-folders
 ```
 
-3. Inicia los servicios:
+### 3. Configurar la IP Tailscale en dnsmasq
+
+```bash
+tailscale ip -4
+# Editar dnsmasq/dnsmasq.conf → sustituir 100.x.x.x por la IP obtenida
+```
+
+### 4. Liberar el puerto 53 en Ubuntu (una vez)
+
+```bash
+sudo sed -i 's/#DNSStubListener=yes/DNSStubListener=no/' /etc/systemd/resolved.conf
+sudo systemctl restart systemd-resolved
+sudo ss -tulpn | grep ':53'   # verificar que el puerto está libre
+```
+
+### 5. Iniciar el stack
 
 ```bash
 make up
 ```
 
-## 📁 Estructura de Directorios Recomendada
+`make up` ejecuta en orden:
+1. Siembra los `config.xml` en los servicios Arr con las API keys del `.env` (si no existen)
+2. Levanta todos los servicios en background
+3. El `provisioner` arranca automáticamente cuando los servicios están healthy y configura todas las interconexiones vía API
+
+### 6. Configurar Tailscale Split DNS (una vez por tailnet)
+
+En `login.tailscale.com/admin/dns`:
+
+1. **DNS** → **Add nameserver** → **Custom**
+2. **Nameserver:** IP Tailscale del servidor
+3. **Domain:** `notflix.internal` + activar **"Restrict to domain"**
+
+Verificar: `dig radarr.notflix.internal` → debe devolver la IP Tailscale del servidor.
+
+## Lo que se configura automáticamente
+
+Tras `make up`, el provisioner configura:
+
+| Configuración | Estado |
+|---|---|
+| FlareSolverr como proxy en Prowlarr | Automático |
+| Prowlarr ↔ Radarr / Sonarr (fullSync) | Automático |
+| qBittorrent como download client en Radarr y Sonarr | Automático |
+| Root folders `/movies` y `/tv` | Automático |
+| Notificaciones ntfy en Radarr y Sonarr | Automático |
+| Indexers en Prowlarr | Manual (requieren credenciales) |
+| Biblioteca de Plex | Manual (requiere PLEX_CLAIM token) |
+| Overseerr (requiere OAuth Plex) | Manual |
+
+> **Nota sobre qBittorrent:** En el primer arranque genera una contraseña temporal visible en `make logs-qbit`. Cámbiala en la WebUI al valor de `QBIT_PASS` del `.env` y ejecuta `make provision` de nuevo.
+
+## Versiones y Actualizaciones
+
+Las versiones de las imágenes se controlan en `.env` (`RADARR_VERSION`, etc.).
+
+**Flujo recomendado:**
+
+1. **Diun** notifica cada lunes si hay nuevas versiones disponibles (llega a ntfy)
+2. Consultar el changelog del servicio
+3. Actualizar la versión en `.env`
+4. Aplicar solo ese servicio:
 
 ```bash
-notflix/
-├── custom-format-español.json
-├── docker-compose.yml
-├── Makefile
-├── README.md
-├── plex/
-│   ├── config/
-│   └── transcode/
-├── qbittorrent/
-│   └── config/
-├── radarr/
-│   └── config/
-├── sonarr/
-│   └── config/
-├── prowlarr/
-│   └── config/
-└── downloads/
-    ├── movies/     # Carpeta final para películas
-    ├── tv/         # Carpeta final para series
-    └── incomplete/ # Carpeta temporal para descargas en proceso
+docker compose pull radarr
+docker compose up -d radarr
 ```
 
-## 🛠 Comandos Make Disponibles
+**Pinear versiones tras el primer despliegue:**
+
+```bash
+# Obtener versión actual de cada servicio:
+docker inspect radarr      | jq -r '.[0].Config.Image'
+docker inspect sonarr      | jq -r '.[0].Config.Image'
+docker inspect prowlarr    | jq -r '.[0].Config.Image'
+docker inspect qbittorrent | jq -r '.[0].Config.Image'
+docker inspect plex-server | jq -r '.[0].Config.Image'
+# Copiar las versiones al .env
+```
+
+## Quality Profiles con Recyclarr
+
+Recyclarr sincroniza perfiles de calidad y custom formats desde TRaSH-Guides directamente en Radarr y Sonarr. Complementa el `custom-format-español.json` del repo.
+
+```bash
+make recyclarr          # Sincronizar perfiles
+make recyclarr-list     # Ver custom formats disponibles para Radarr
+```
+
+La configuración está en `recyclarr/recyclarr.yml` y es versionada junto al proyecto.
+
+## Notificaciones Push
+
+ntfy envía notificaciones cuando se completan descargas o hay problemas de salud.
+
+**Suscribirse desde el móvil** (requiere Tailscale en el dispositivo):
+
+- App ntfy (iOS/Android) → suscribirse a:
+  - `http://ntfy.notflix.internal/notflix-movies`
+  - `http://ntfy.notflix.internal/notflix-series`
+  - `http://ntfy.notflix.internal/notflix-updates` (actualizaciones de imágenes via Diun)
+
+## Peticiones de Contenido — Overseerr
+
+1. Acceder a http://overseerr.notflix.internal
+2. Login con cuenta Plex
+3. Conectar Plex server (autodetección en `media-network`)
+4. Añadir Radarr: URL `http://radarr:7878`, API key desde `.env`
+5. Añadir Sonarr: URL `http://sonarr:8989`, API key desde `.env`
+
+## Backup
+
+```bash
+make backup       # Backup de configs (sin .env)
+make backup-full  # Backup completo incluyendo .env (contiene credenciales)
+```
+
+Los backups se guardan en `./backups/` con timestamp. Para restaurar:
+
+```bash
+cd notflix
+tar -xzf backups/notflix-backup-YYYYMMDD-HHMMSS.tar.gz
+make up
+```
+
+## Reinstalación / Migración
+
+```bash
+# Copiar al nuevo servidor (incluir */config para mantener configuración):
+rsync -av --exclude='downloads/' notflix/ nuevo-servidor:~/notflix/
+
+# En el nuevo servidor:
+make up
+```
+
+## Comandos Make
 
 | Comando | Descripción |
-|---------|-------------|
-| `make create-folders` | Crea la estructura de directorios necesaria |
-| `make up` | Inicia todos los servicios |
+|---|---|
+| `make create-folders` | Crea la estructura de directorios |
+| `make up` | Siembra configs, levanta el stack y ejecuta el provisioner |
 | `make down` | Detiene todos los servicios |
 | `make restart` | Reinicia todos los servicios |
-| `make status` | Muestra el estado de los servicios |
-| `make logs` | Muestra logs de todos los servicios |
-| `make logs-plex` | Muestra logs de Plex |
-| `make logs-qbit` | Muestra logs de qBittorrent |
-| `make logs-radarr` | Muestra logs de Radarr |
-| `make logs-sonarr` | Muestra logs de Sonarr |
-| `make logs-prowlarr` | Muestra logs de Prowlarr |
-| `make logs-flare` | Muestra logs de FlareSolverr |
+| `make status` | Estado de los contenedores |
+| `make provision` | Re-ejecuta el provisioner (idempotente) |
+| `make recyclarr` | Sincroniza quality profiles con TRaSH-Guides |
+| `make backup` | Backup de configuraciones |
+| `make backup-full` | Backup completo con `.env` |
+| `make logs-<servicio>` | Logs individuales: `plex`, `qbit`, `radarr`, `sonarr`, `prowlarr`, `flare`, `caddy`, `provisioner`, `overseerr`, `ntfy`, `diun` |
 
-## ⚙️ Configuración Recomendada
+## Configuración Manual Post-Arranque
 
 ### qBittorrent
 
-- Ruta de descarga: `/downloads/incomplete`
-- Mover archivos completados a: `/downloads`
-- Crear subcarpetas para torrents: No
+```bash
+make logs-qbit
+# Buscar: "A temporary password is provided for this session: XXXXXX"
+```
 
-### Radarr
+Cambiar la contraseña en Tools > Options > Web UI > Password al valor de `QBIT_PASS` del `.env`.
 
-- Carpeta de películas: `/movies`
-- Carpeta de descargas: `/downloads`
-- Media Management:
-  - Renombrado de archivos: Activado
-  - Mover archivos: Activado
-  - Eliminar archivos: Activado después de importar
+### Prowlarr
 
-### Sonarr
+- Añadir indexers en http://prowlarr.notflix.internal → Settings > Indexers
 
-- Carpeta de series: `/tv`
-- Carpeta de descargas: `/downloads`
-- Media Management:
-  - Renombrado de episodios: Activado
-  - Crear carpeta por temporada: Activado
-  - Eliminar archivos: Activado después de importar
+### Custom Format Español
+
+Settings > Custom Formats > Import → pegar el contenido de `custom-format-español.json`
 
 ### Plex
 
-- Biblioteca de películas: `/movies`
-- Biblioteca de TV: `/tv`
-- Escaneo automático: Activado
+- Bibliotecas: Movies → `/movies`, TV Shows → `/tv`
+- Settings > Remote Access > Custom server access URLs: `http://plex.notflix.internal`
 
-## 🔧 Guía de Configuración Paso a Paso
+## Notas
 
-### 1️⃣ qBittorrent
+- El tráfico viaja cifrado por WireGuard (Tailscale) → HTTP interno es seguro.
+- Si cambia la IP Tailscale del servidor: actualizar `dnsmasq/dnsmasq.conf` + `docker compose restart dnsmasq`.
+- Los directorios de runtime no están versionados. Hacer `make backup` antes de migrar.
 
-- Accede a [http://localhost:8080](http://localhost:8080)
-- Credenciales por defecto: usuario `admin` y contraseña `la contraseña que se genera la primera vez que se levanta el contenedor`
-- Configuración inicial:
-  1. WebUI > Password: la primera vez que se levanta el contenedor, se genera una contraseña aleatoria y se muestra en los logs.
+## Licencia
 
-  ```bash
-  make logs-qbit
-  ```
-
-  ```bash
-  qbittorrent  | The WebUI administrator password was not set. A temporary password is provided for this session: XXXXXX
-  ```
-
-  2. Tools > WebUI > Change password: Cambiar la contraseña o bien bypass de cliente en localhost:8080
-  3. Tools > Options > Downloads
-  4. Default Save Path: `/downloads`
-  5. Keep incomplete torrents in: `/downloads/incomplete`
-  6. Deshabilitar "Create subfolder for torrents"
-  7. Save
-
-- Documentación:
-  - [https://hub.docker.com/r/linuxserver/qbittorrent](https://hub.docker.com/r/linuxserver/qbittorrent)
-  - [https://wiki.archlinux.org/title/QBittorrent](https://wiki.archlinux.org/title/QBittorrent)
-
-### 2️⃣ Prowlarr
-
-- Accede a [http://localhost:9696](http://localhost:9696)
-- Configuración inicial:
-  1. Authentication Method: Elige un método, recomendado: Basic Authentication
-  2. Authentication > Enable authentication
-  3. Authentication > Username
-  4. Authentication > Password
-  5. Configura FlareSolverr como `http://flaresolverr:8191/`:
-      - [https://trash-guides.info/Prowlarr/prowlarr-setup-flaresolverr/](https://trash-guides.info/Prowlarr/prowlarr-setup-flaresolverr/)
-
-  6. Añade indexadores (trackers)
-     - Añadir indexadores: recomendados los de privacy public y contengan tags de movies y tv
-  7. Settings > Apps
-     - Añade Radarr y Sonarr:
-       - Accede para obtener el API Key a cada uno, en Settings > General > API Key
-     - Hosts:
-       - `http://prowlarr:9696`
-       - `http://radarr:7878`
-       - `http://sonarr:8989`
-
-### 3️⃣ Radarr
-
-- Accede a [http://localhost:7878](http://localhost:7878)
-- Configuración inicial:
-  1. Settings > Media Management
-     - Movies Folder: `/movies`
-     - Activar "Movie Naming"
-  2. Settings > Download Clients
-     - Añade qBittorrent
-     - Host: qbittorrent
-     - Puerto: 8080
-     - Incluye el usuario y contraseña de qBittorrent
-  3. Settings > General
-     - Añade Prowlarr como indexador
-
-### 4️⃣ Sonarr
-
-- Accede a [http://localhost:8989](http://localhost::)
-- Configuración similar a Radarr:
-  1. Settings > Media Management
-     - TV Folder: `/tv`
-     - Activar "Episode Naming"
-  2. Settings > Download Clients
-     - Añade qBittorrent (igual que en Radarr)
-  3. Settings > General
-     - Añade Prowlarr como indexador
-
-> **Nota**: custom-format-español.json es un custom format tanto para Radarr y Sonarr, se encuentra en la raiz del proyecto.
-Ir a Settings > Custom Formats > Add Custom Format > Import Custom Format > Seleccionar el contenido del archivo custom-format-español.json > Import
-
-- [https://trash-guides.info/Radarr/Tips/How-to-setup-language-custom-formats/#how-to-setup-language-custom-formats](https://trash-guides.info/Radarr/Tips/How-to-setup-language-custom-formats/#how-to-setup-language-custom-formats)
-
-### 5️⃣ Plex
-
-- Accede a [http://localhost:32400/web](http://localhost:32400/web)
-- Configuración de bibliotecas:
-  1. Añade biblioteca Movies: `/movies`
-  2. Añade biblioteca TV Shows: `/tv`
-  3. Activa "Scan my library automatically"
-
-## ⚙️ Notas Importantes
-
-- Optimizado para Apple Silicon (ARM64)
-- PUID=501 y PGID=20 (valores por defecto en macOS)
-- Carpeta `downloads` compartida entre qBittorrent, Radarr y Sonarr
-- Carpetas de medios (`Movies` y `TV`) compartidas entre Plex y Radarr/Sonarr
-
-## 🔒 Seguridad
-
-Recuerda cambiar las credenciales por defecto de qBittorrent después de la primera instalación.
-
-## 🤝 Contribuciones
-
-Las contribuciones son bienvenidas. Por favor, abre un issue o un pull request.
-
-## 📝 Licencia
-
-Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
+MIT

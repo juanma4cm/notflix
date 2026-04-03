@@ -1,117 +1,227 @@
 services:
+
+  caddy:
+    image: caddy:${CADDY_VERSION:-2-alpine}
+    container_name: caddy
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    environment:
+      - DOMAIN=${DOMAIN:-notflix.internal}
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  dnsmasq:
+    image: ricardbejarano/dnsmasq:latest
+    container_name: dnsmasq
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+    volumes:
+      - ./dnsmasq/dnsmasq.conf:/etc/dnsmasq.conf:ro
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+    networks:
+      - media-network
+
   qbittorrent:
-    image: linuxserver/qbittorrent:latest
+    image: lscr.io/linuxserver/qbittorrent:${QBITTORRENT_VERSION:-latest}
     container_name: qbittorrent
     environment:
-      - PUID=501
-      - PGID=20
-      - TZ=Europe/Madrid
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TZ:-Europe/Madrid}
       - WEBUI_PORT=8080
       - TORRENTING_PORT=6881
     volumes:
       - ./qbittorrent/config:/config
       - ./downloads:/downloads
     ports:
-      - 8080:8080
-      - 6881:6881
-      - 6881:6881/udp
+      - "6881:6881"
+      - "6881:6881/udp"
     restart: unless-stopped
-    platform: linux/arm64
     networks:
       - media-network
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   prowlarr:
-    image: linuxserver/prowlarr:latest
+    image: lscr.io/linuxserver/prowlarr:${PROWLARR_VERSION:-latest}
     container_name: prowlarr
     environment:
-      - PUID=501
-      - PGID=20
-      - TZ=Europe/Madrid
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TZ:-Europe/Madrid}
     volumes:
       - ./prowlarr/config:/config
-    ports:
-      - 9696:9696
     restart: unless-stopped
-    platform: linux/arm64
     networks:
       - media-network
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9696/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
     container_name: flaresolverr
     environment:
       - LOG_LEVEL=info
-      - TZ=Europe/Madrid
-    ports:
-      - 8191:8191
+      - TZ=${TZ:-Europe/Madrid}
     restart: unless-stopped
-    platform: linux/arm64
     networks:
       - media-network
 
   radarr:
-    image: linuxserver/radarr:latest
+    image: lscr.io/linuxserver/radarr:${RADARR_VERSION:-latest}
     container_name: radarr
     environment:
-      - PUID=501
-      - PGID=20
-      - TZ=Europe/Madrid
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TZ:-Europe/Madrid}
     volumes:
       - ./radarr/config:/config
       - ./downloads:/downloads
       - ./downloads/movies:/movies
-    ports:
-      - 7878:7878
     restart: unless-stopped
-    platform: linux/arm64
     networks:
       - media-network
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:7878/api/v3/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   sonarr:
-    image: linuxserver/sonarr:latest
+    image: lscr.io/linuxserver/sonarr:${SONARR_VERSION:-latest}
     container_name: sonarr
     environment:
-      - PUID=501
-      - PGID=20
-      - TZ=Europe/Madrid
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TZ:-Europe/Madrid}
     volumes:
       - ./sonarr/config:/config
       - ./downloads:/downloads
       - ./downloads/tv:/tv
-    ports:
-      - 8989:8989
     restart: unless-stopped
-    platform: linux/arm64
     networks:
       - media-network
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8989/api/v3/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   plex:
-    image: linuxserver/plex:latest
+    image: lscr.io/linuxserver/plex:${PLEX_VERSION:-latest}
     container_name: plex-server
     environment:
-      - PUID=501
-      - PGID=20
-      - TZ=Europe/Madrid
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TZ:-Europe/Madrid}
       - VERSION=docker
     ports:
-      - 32400:32400/tcp
-      - 3005:3005/tcp
-      - 8324:8324/tcp
-      - 32469:32469/tcp
-      - 1900:1900/udp
-      - 32410:32410/udp
-      - 32412:32412/udp
-      - 32413:32413/udp
-      - 32414:32414/udp
+      - "32400:32400/tcp"
+      - "1900:1900/udp"
+      - "32410:32410/udp"
+      - "32412:32412/udp"
+      - "32413:32413/udp"
+      - "32414:32414/udp"
     volumes:
       - ./plex/config:/config
       - ./plex/transcode:/transcode
       - ./downloads/movies:/movies
       - ./downloads/tv:/tv
     restart: unless-stopped
-    platform: linux/arm64
+    networks:
+      - media-network
+
+  overseerr:
+    image: lscr.io/linuxserver/overseerr:${OVERSEERR_VERSION:-latest}
+    container_name: overseerr
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=${TZ:-Europe/Madrid}
+    volumes:
+      - ./overseerr/config:/config
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  recyclarr:
+    image: ghcr.io/recyclarr/recyclarr:latest
+    container_name: recyclarr
+    user: "${PUID:-1000}:${PGID:-1000}"
+    volumes:
+      - ./recyclarr:/config
+    env_file: .env
+    environment:
+      - TZ=${TZ:-Europe/Madrid}
+    restart: "no"
+    networks:
+      - media-network
+
+  ntfy:
+    image: binwiederhier/ntfy:latest
+    container_name: ntfy
+    command: serve --config /etc/ntfy/server.yml
+    volumes:
+      - ./ntfy/server.yml:/etc/ntfy/server.yml:ro
+      - ./ntfy/data:/var/lib/ntfy
+    environment:
+      - TZ=${TZ:-Europe/Madrid}
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  diun:
+    image: crazymax/diun:latest
+    container_name: diun
+    command: serve
+    volumes:
+      - ./diun/diun.yml:/diun.yml:ro
+      - ./diun/data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - TZ=${TZ:-Europe/Madrid}
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  provisioner:
+    build: ./provisioner
+    container_name: provisioner
+    env_file: .env
+    volumes:
+      - ./radarr/config:/config/radarr
+      - ./sonarr/config:/config/sonarr
+      - ./prowlarr/config:/config/prowlarr
+      - ./config-templates:/templates:ro
+    depends_on:
+      qbittorrent:
+        condition: service_healthy
+      prowlarr:
+        condition: service_healthy
+      radarr:
+        condition: service_healthy
+      sonarr:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - media-network
 
 networks:
   media-network:
     driver: bridge
-

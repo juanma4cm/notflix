@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Config>
+  <LogLevel>info</LogLevel>
+  <UpdateMechanism>Docker</UpdateMechanism>
+  <AnalyticsEnabled>False</AnalyticsEnabled>
+  <ApiKey>${SONARR_API_KEY}</ApiKey>
+  <AuthenticationMethod>Forms</AuthenticationMethod>
+  <AuthenticationRequired>Enabled</AuthenticationRequired>
+  <Port>8989</Port>
+  <BindAddress>*</BindAddress>
+</Config>

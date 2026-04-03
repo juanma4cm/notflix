@@ -1,6 +1,19 @@
-downloads/
-plex/
-prowlarr/
-qbittorrent/
-radarr/
-sonarr/
+.vscode/
+
+# Runtime — datos generados, no versionar
+# El prefijo / ancla las rutas a la raíz del repo
+/downloads/
+/plex/
+/prowlarr/
+/qbittorrent/
+/radarr/
+/sonarr/
+/overseerr/
+
+# Datos de runtime de servicios con config versionada
+/ntfy/data/
+/diun/data/
+
+# Entorno local — contiene credenciales
+.env
+backups/

@@ -1,0 +1,13 @@
+notif:
+  ntfy:
+    endpoint: http://ntfy:80
+    topic: notflix-updates
+    priority: 3
+
+watch:
+  workers: 5
+  schedule: "0 9 * * 1"  # Lunes a las 9:00
+  jitter: 30s
+
+db:
+  path: /data/diun.db
