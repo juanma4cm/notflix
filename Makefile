@@ -32,7 +32,7 @@ create-folders:
 
 up:
 	@printf "$(GREEN)Sembrando configuraciones iniciales...$(RESET)\n"
-	$(COMPOSE) run --rm --no-deps provisioner /seed.sh
+	$(COMPOSE) run --rm --no-deps --entrypoint /seed.sh provisioner
 	@printf "$(GREEN)Levantando todos los servicios...$(RESET)\n"
 	$(COMPOSE) up -d
 
