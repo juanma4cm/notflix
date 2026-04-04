@@ -36,8 +36,9 @@ cp .env.example .env
 Editar `.env` con los valores del servidor:
 
 ```bash
-id -u   # → PUID
-id -g   # → PGID
+id -u          # → PUID
+id -g          # → PGID
+tailscale ip -4  # → TAILSCALE_IP
 
 # Generar API keys:
 echo "RADARR_API_KEY=$(openssl rand -hex 16)"
@@ -45,26 +46,54 @@ echo "SONARR_API_KEY=$(openssl rand -hex 16)"
 echo "PROWLARR_API_KEY=$(openssl rand -hex 16)"
 ```
 
+Variables a configurar en `.env`:
+
+| Variable | Cómo obtenerla |
+|---|---|
+| `PUID` / `PGID` | `id -u && id -g` |
+| `TAILSCALE_IP` | `tailscale ip -4` |
+| `RADARR_API_KEY` | `openssl rand -hex 16` |
+| `SONARR_API_KEY` | `openssl rand -hex 16` |
+| `PROWLARR_API_KEY` | `openssl rand -hex 16` |
+| `QBIT_PASS` | Contraseña segura a elegir |
+
 ### 2. Crear estructura de directorios
 
 ```bash
 make create-folders
 ```
 
-### 3. Configurar la IP Tailscale en dnsmasq
+Si existe `/mnt/media` (disco externo), crea `movies/`, `tv/`, `downloads/` allí y los enlaza simbólicamente. Si no, crea los directorios localmente.
 
-```bash
-tailscale ip -4
-# Editar dnsmasq/dnsmasq.conf → sustituir 100.x.x.x por la IP obtenida
-```
-
-### 4. Liberar el puerto 53 en Ubuntu (una vez)
+### 3. Liberar el puerto 53 en Ubuntu (una vez)
 
 ```bash
 sudo sed -i 's/#DNSStubListener=yes/DNSStubListener=no/' /etc/systemd/resolved.conf
 sudo systemctl restart systemd-resolved
 sudo ss -tulpn | grep ':53'   # verificar que el puerto está libre
 ```
+
+### 4. Permitir tráfico Tailscale → Docker (una vez)
+
+Docker y Tailscale tienen reglas iptables independientes. Por defecto, el tráfico que llega por la interfaz `tailscale0` no alcanza los contenedores Docker. Hay que añadir una regla y hacerla persistente:
+
+```bash
+# Permitir tráfico de Tailscale hacia contenedores Docker
+sudo iptables -I DOCKER-USER -i tailscale0 -j ACCEPT
+
+# Instalar iptables-persistent para que la regla sobreviva reinicios
+sudo apt install iptables-persistent -y
+sudo netfilter-persistent save
+```
+
+Verificar que la regla está activa:
+
+```bash
+sudo iptables -L DOCKER-USER -n -v
+# Debe aparecer: ACCEPT all -- tailscale0 *
+```
+
+> Si no se aplica esta regla, los dominios `*.notflix.internal` resolverán correctamente pero el navegador obtendrá "Connection refused" al intentar conectar.
 
 ### 5. Iniciar el stack
 
@@ -73,11 +102,39 @@ make up
 ```
 
 `make up` ejecuta en orden:
-1. Siembra los `config.xml` en los servicios Arr con las API keys del `.env` (si no existen)
+1. **seed.sh** — genera `dnsmasq/dnsmasq.conf` desde el template con `TAILSCALE_IP`, y siembra los `config.xml` de los servicios Arr con las API keys del `.env` (si no existen)
 2. Levanta todos los servicios en background
-3. El `provisioner` arranca automáticamente cuando los servicios están healthy y configura todas las interconexiones vía API
+3. El **provisioner** arranca automáticamente cuando los servicios están healthy y configura todas las interconexiones vía API
 
-### 6. Configurar Tailscale Split DNS (una vez por tailnet)
+### 6. Cambiar contraseña de qBittorrent (primer arranque)
+
+En el primer arranque, qBittorrent genera una contraseña temporal:
+
+```bash
+make logs-qbit | grep -i "temporary password"
+# Buscar: "A temporary password is provided for this session: XXXXXX"
+```
+
+Accede a **http://qbittorrent.notflix.internal** → **Tools → Options → Web UI → Password** → cambia al valor de `QBIT_PASS` del `.env` → Apply.
+
+Luego re-ejecuta el provisioner para completar la configuración de qBittorrent:
+
+```bash
+make provision
+```
+
+### 7. Configurar credenciales de Prowlarr, Radarr y Sonarr (primer arranque)
+
+En el primer acceso a cada servicio, el wizard pregunta el método de autenticación y las credenciales:
+
+1. Acceder a **http://prowlarr.notflix.internal**, **http://radarr.notflix.internal** y **http://sonarr.notflix.internal**
+2. En el wizard elegir **Forms** y crear usuario (ej: `admin` / `admin`)  
+   — o seleccionar **"Authentication Disabled"** si se prefiere sin login (la red ya está protegida por Tailscale)
+3. Repetir en los tres servicios
+
+> El provisioner configura todo vía API key y no requiere credenciales web. Este paso es solo para acceder a la UI.
+
+### 8. Configurar Tailscale Split DNS (una vez por tailnet)
 
 En `login.tailscale.com/admin/dns`:
 
@@ -102,7 +159,9 @@ Tras `make up`, el provisioner configura:
 | Biblioteca de Plex | Manual (requiere PLEX_CLAIM token) |
 | Overseerr (requiere OAuth Plex) | Manual |
 
-> **Nota sobre qBittorrent:** En el primer arranque genera una contraseña temporal visible en `make logs-qbit`. Cámbiala en la WebUI al valor de `QBIT_PASS` del `.env` y ejecuta `make provision` de nuevo.
+> **qBittorrent:** La configuración del download client en Radarr/Sonarr requiere que la contraseña de qBittorrent ya esté cambiada al valor de `QBIT_PASS`. Ver paso 6 de la instalación.
+>
+> **Prowlarr / Radarr / Sonarr:** En el primer acceso la UI muestra un wizard para configurar autenticación. Ver paso 7.
 
 ## Versiones y Actualizaciones
 
@@ -206,16 +265,15 @@ make up
 
 ### qBittorrent
 
-```bash
-make logs-qbit
-# Buscar: "A temporary password is provided for this session: XXXXXX"
-```
+Ver **paso 6** de la instalación. Resumen: obtener contraseña temporal con `make logs-qbit | grep -i "temporary password"`, cambiarla en la WebUI y ejecutar `make provision`.
 
-Cambiar la contraseña en Tools > Options > Web UI > Password al valor de `QBIT_PASS` del `.env`.
+### Prowlarr / Radarr / Sonarr — Autenticación
 
-### Prowlarr
+Ver **paso 7** de la instalación. En el primer acceso aparece un wizard para elegir método de autenticación y crear credenciales. El provisioner no necesita credenciales web (usa API key).
 
-- Añadir indexers en http://prowlarr.notflix.internal → Settings > Indexers
+### Prowlarr — Indexers
+
+- Añadir indexers en `http://prowlarr.notflix.internal` → Settings > Indexers
 
 ### Custom Format Español
 
@@ -229,8 +287,58 @@ Settings > Custom Formats > Import → pegar el contenido de `custom-format-espa
 ## Notas
 
 - El tráfico viaja cifrado por WireGuard (Tailscale) → HTTP interno es seguro.
-- Si cambia la IP Tailscale del servidor: actualizar `dnsmasq/dnsmasq.conf` + `docker compose restart dnsmasq`.
+- Si cambia la IP Tailscale del servidor: actualizar `TAILSCALE_IP` en `.env` y ejecutar `make up` (seed.sh regenera `dnsmasq.conf` automáticamente).
 - Los directorios de runtime no están versionados. Hacer `make backup` antes de migrar.
+- **Tailscale + Docker iptables:** La regla `iptables -I DOCKER-USER -i tailscale0 -j ACCEPT` es obligatoria. Sin ella el DNS funciona pero HTTP falla. Debe persistirse con `netfilter-persistent save`.
+- **dnsmasq:** La imagen `ricardbejarano/dnsmasq` escucha internamente en el puerto 1053 (no 53). El mapeo en `docker-compose.yml` es `53:1053`.
+
+## Apéndice: Disco Externo para Medios
+
+`make create-folders` detecta automáticamente `/mnt/media` y crea allí la estructura de directorios (`movies/`, `tv/`, `downloads/`) con symlinks desde el proyecto. Si quieres usar un disco externo como almacenamiento de medios, sigue estos pasos.
+
+### 1. Formatear y montar el disco (primera vez)
+
+```bash
+# Identificar el disco (buscar el de mayor tamaño sin montar)
+lsblk
+
+# Formatear en ext4 (⚠️ borra todos los datos del disco)
+sudo mkfs.ext4 /dev/sdX
+
+# Crear punto de montaje y montar
+sudo mkdir -p /mnt/media
+sudo mount /dev/sdX /mnt/media
+```
+
+### 2. Montar automáticamente al arranque (fstab)
+
+Sin esta configuración el disco se pierde en cada reinicio del servidor.
+
+```bash
+# Obtener UUID del disco
+sudo blkid /dev/sdX
+
+# Añadir al fstab (sustituir UUID por el obtenido)
+echo 'UUID=<uuid-del-disco> /mnt/media ext4 defaults,nofail 0 2' | sudo tee -a /etc/fstab
+
+# Verificar que la entrada es correcta
+sudo mount -a
+df -h | grep media
+```
+
+> `nofail` evita que el servidor no arranque si el disco externo no está conectado en el momento del boot.
+
+### 3. Asignar permisos al usuario del servidor
+
+```bash
+sudo chown -R calle:calle /mnt/media
+```
+
+Sustituir `calle` por el usuario configurado en `PUID`/`PGID` del `.env`.
+
+### Nota sobre nombres de dispositivo
+
+Los nombres `/dev/sdb`, `/dev/sdc`, etc. pueden cambiar entre arranques si hay varios discos. Usar siempre **UUID** en fstab (como en el paso 2) garantiza que el disco correcto se monta en `/mnt/media` independientemente del nombre asignado.
 
 ## Licencia
 

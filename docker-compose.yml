@@ -17,8 +17,8 @@ services:
     image: ricardbejarano/dnsmasq:latest
     container_name: dnsmasq
     ports:
-      - "53:53/udp"
-      - "53:53/tcp"
+      - "53:1053/udp"
+      - "53:1053/tcp"
     volumes:
       - ./dnsmasq/dnsmasq.conf:/etc/dnsmasq.conf:ro
     cap_add:
@@ -65,7 +65,7 @@ services:
     networks:
       - media-network
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:9696/api/v1/health"]
+      test: ["CMD", "curl", "-sf", "http://localhost:9696"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -96,7 +96,7 @@ services:
     networks:
       - media-network
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:7878/api/v3/health"]
+      test: ["CMD", "curl", "-sf", "http://localhost:7878"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -117,7 +117,7 @@ services:
     networks:
       - media-network
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8989/api/v3/health"]
+      test: ["CMD", "curl", "-sf", "http://localhost:8989"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -209,6 +209,7 @@ services:
       - ./sonarr/config:/config/sonarr
       - ./prowlarr/config:/config/prowlarr
       - ./config-templates:/templates:ro
+      - ./dnsmasq:/dnsmasq
     depends_on:
       qbittorrent:
         condition: service_healthy

@@ -36,9 +36,9 @@ already_exists() { [ "$(echo "$1" | jq 'length')" -gt "0" ]; }
 # ─── Esperar a que todos los servicios estén listos ───────────────────────────
 
 wait_for "qBittorrent" "$QBIT_URL"
-wait_for "Prowlarr"    "$PROWLARR_URL/api/v1/health"
-wait_for "Radarr"      "$RADARR_URL/api/v3/health"
-wait_for "Sonarr"      "$SONARR_URL/api/v3/health"
+wait_for "Prowlarr"    "$PROWLARR_URL/api/v1/health?apikey=$PROWLARR_API_KEY"
+wait_for "Radarr"      "$RADARR_URL/api/v3/health?apikey=$RADARR_API_KEY"
+wait_for "Sonarr"      "$SONARR_URL/api/v3/health?apikey=$SONARR_API_KEY"
 
 # ─── qBittorrent ──────────────────────────────────────────────────────────────
 
@@ -234,7 +234,7 @@ if ! already_exists "$EXISTING"; then
       "onHealthIssue": true,
       "fields": [
         {"name": "url",    "value": "http://ntfy:80/notflix-movies"},
-        {"name": "method", "value": 0}
+        {"name": "method", "value": 1}
       ]
     }' > /dev/null
   log "ntfy añadido a Radarr."
@@ -256,7 +256,7 @@ if ! already_exists "$EXISTING"; then
       "onHealthIssue": true,
       "fields": [
         {"name": "url",    "value": "http://ntfy:80/notflix-series"},
-        {"name": "method", "value": 0}
+        {"name": "method", "value": 1}
       ]
     }' > /dev/null
   log "ntfy añadido a Sonarr."

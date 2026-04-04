@@ -1,4 +1,5 @@
 .vscode/
+.claude/
 
 # Runtime — datos generados, no versionar
 # El prefijo / ancla las rutas a la raíz del repo
@@ -13,6 +14,9 @@
 # Datos de runtime de servicios con config versionada
 /ntfy/data/
 /diun/data/
+
+# Archivos generados por seed.sh (contienen valores resueltos del .env)
+dnsmasq/dnsmasq.conf
 
 # Entorno local — contiene credenciales
 .env

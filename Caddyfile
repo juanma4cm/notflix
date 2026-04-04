@@ -4,29 +4,29 @@
 	admin off
 }
 
-radarr.{$DOMAIN:notflix.internal} {
+http://radarr.{$DOMAIN:notflix.internal} {
 	reverse_proxy radarr:7878
 }
 
-sonarr.{$DOMAIN:notflix.internal} {
+http://sonarr.{$DOMAIN:notflix.internal} {
 	reverse_proxy sonarr:8989
 }
 
-prowlarr.{$DOMAIN:notflix.internal} {
+http://prowlarr.{$DOMAIN:notflix.internal} {
 	reverse_proxy prowlarr:9696
 }
 
-qbittorrent.{$DOMAIN:notflix.internal} {
+http://qbittorrent.{$DOMAIN:notflix.internal} {
 	reverse_proxy qbittorrent:8080 {
 		header_up Host {upstream_hostport}
 	}
 }
 
-flaresolverr.{$DOMAIN:notflix.internal} {
+http://flaresolverr.{$DOMAIN:notflix.internal} {
 	reverse_proxy flaresolverr:8191
 }
 
-plex.{$DOMAIN:notflix.internal} {
+http://plex.{$DOMAIN:notflix.internal} {
 	reverse_proxy plex-server:32400 {
 		header_up Host {upstream_hostport}
 		header_up X-Real-IP {remote_host}
@@ -35,10 +35,10 @@ plex.{$DOMAIN:notflix.internal} {
 	}
 }
 
-overseerr.{$DOMAIN:notflix.internal} {
+http://overseerr.{$DOMAIN:notflix.internal} {
 	reverse_proxy overseerr:5055
 }
 
-ntfy.{$DOMAIN:notflix.internal} {
+http://ntfy.{$DOMAIN:notflix.internal} {
 	reverse_proxy ntfy:80
 }

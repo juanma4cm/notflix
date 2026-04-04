@@ -1,3 +1,7 @@
+providers:
+  docker:
+    watchStopped: false
+
 notif:
   ntfy:
     endpoint: http://ntfy:80

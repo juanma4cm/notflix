@@ -11,6 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Ubuntu Server + Docker Engine v2 + Docker Compose plugin
 - Tailscale instalado y autenticado
 - Puerto 53 libre (deshabilitar stub listener de systemd-resolved)
+- Regla iptables para Tailscale+Docker (ver sección DNS más abajo)
 
 ## Common Commands
 
@@ -63,6 +64,7 @@ Todo lo configurable está en `.env` (no versionado). Referencia: `.env.example`
 
 Variables clave:
 - `PUID` / `PGID` — usuario del servidor (`id -u && id -g`)
+- `TAILSCALE_IP` — IP del servidor en la red Tailscale (`tailscale ip -4`). seed.sh la inyecta en `dnsmasq.conf` automáticamente.
 - `DOMAIN` — dominio base (default: `notflix.internal`)
 - `RADARR_API_KEY`, `SONARR_API_KEY`, `PROWLARR_API_KEY` — generar con `openssl rand -hex 16`
 - `QBIT_USER` / `QBIT_PASS` — credenciales qBittorrent
@@ -89,12 +91,12 @@ docker inspect radarr | jq -r '.[0].Config.Image'
 
 El stack se autoconfigura en dos fases:
 
-### 1. Pre-seed de config.xml (`provisioner/seed.sh`)
+### 1. Pre-seed (`provisioner/seed.sh`)
 
-Ejecutado por `make up` **antes** de `docker compose up -d` via `--no-deps`. Copia
-`config-templates/{radarr,sonarr,prowlarr}/config.xml` (con `envsubst`) a los
-directorios de configuración. Garantiza que los servicios Arr arrancan con la API key
-conocida del `.env` en lugar de generar una aleatoria.
+Ejecutado por `make up` **antes** de `docker compose up -d` via `--no-deps`. Hace dos cosas:
+
+1. **dnsmasq.conf** — procesa `dnsmasq/dnsmasq.conf.template` con `envsubst` y escribe `dnsmasq/dnsmasq.conf` (usando `TAILSCALE_IP` del `.env`). Se regenera en cada `make up`, por lo que cambiar la IP solo requiere actualizar `.env`.
+2. **config.xml de los Arr** — copia `config-templates/{radarr,sonarr,prowlarr}/config.xml` (con `envsubst`) a los directorios de configuración. Garantiza que los servicios Arr arrancan con la API key conocida del `.env` en lugar de generar una aleatoria. Es idempotente: no sobreescribe si el archivo ya existe.
 
 ### 2. Provisioner API (`provisioner/provision.sh`)
 
@@ -117,16 +119,17 @@ Ejecutar con `make recyclarr` tras el provisioning inicial.
 
 Versionado:
 - `docker-compose.yml`, `Makefile`, `Caddyfile`
-- `dnsmasq/dnsmasq.conf` — contiene IP Tailscale del servidor (actualizar al migrar)
+- `dnsmasq/dnsmasq.conf.template` — template con `${TAILSCALE_IP}`, procesado por seed.sh
 - `.env.example` — plantilla sin credenciales
-- `config-templates/` — templates XML para pre-seed
+- `config-templates/` — templates XML para pre-seed de los Arr
 - `provisioner/` — Dockerfile + seed.sh + provision.sh
 - `recyclarr/recyclarr.yml`, `ntfy/server.yml`, `diun/diun.yml`
 - `custom-format-español.json`
 - `.claude/plans/`
 
 No versionado (`.gitignore`):
-- `.env` — contiene credenciales
+- `.env` — contiene credenciales y `TAILSCALE_IP`
+- `dnsmasq/dnsmasq.conf` — generado por seed.sh (contiene IP resuelta)
 - `/radarr/`, `/sonarr/`, `/prowlarr/`, `/qbittorrent/`, `/plex/`, `/overseerr/` — datos runtime
 - `/ntfy/data/`, `/diun/data/` — datos runtime (configs sí versionadas)
 - `backups/`
@@ -142,11 +145,32 @@ No versionado (`.gitignore`):
 
 ## DNS: Tailscale Split DNS
 
-`dnsmasq/dnsmasq.conf` contiene la IP Tailscale del servidor. Si cambia:
+La IP Tailscale se configura en `.env` como `TAILSCALE_IP`. `seed.sh` la inyecta en `dnsmasq/dnsmasq.conf` automáticamente en cada `make up`.
+
+Si cambia la IP Tailscale del servidor:
 ```bash
-# Editar dnsmasq/dnsmasq.conf → actualizar 100.x.x.x
-docker compose restart dnsmasq
+# 1. Actualizar TAILSCALE_IP en .env
+# 2. Regenerar dnsmasq.conf y reiniciar el contenedor DNS:
+make up   # seed.sh regenera dnsmasq.conf, luego compose up reinicia dnsmasq
 ```
 
-Configuración única en Tailscale admin:
+Configuración única en Tailscale admin (una vez por tailnet):
 DNS → Add nameserver → Custom → IP Tailscale → Domain: `notflix.internal` → Restrict to domain.
+
+### iptables: Tailscale + Docker
+
+Docker y Tailscale gestionan iptables de forma independiente. Sin configuración adicional, el tráfico de Tailscale no alcanza los contenedores Docker (DNS funciona, HTTP falla). Paso obligatorio en cada servidor nuevo:
+
+```bash
+sudo iptables -I DOCKER-USER -i tailscale0 -j ACCEPT
+sudo apt install iptables-persistent -y
+sudo netfilter-persistent save
+```
+
+### Notas de implementación
+
+- **dnsmasq**: La imagen `ricardbejarano/dnsmasq` escucha en el puerto **1053** internamente (no 53, para evitar privilegios root). El mapeo en `docker-compose.yml` es `53:1053`.
+- **Caddy**: Los site blocks deben llevar el prefijo `http://` explícito. Sin él, Caddy crea un listener TLS en puerto 443 aunque `auto_https off` esté configurado.
+- **Arr auth (Prowlarr/Radarr/Sonarr)**: Los templates de `config-templates/` NO incluyen `<AuthenticationMethod>`. Sin esa línea, los servicios muestran un wizard en el primer acceso web donde el usuario elige el método y crea credenciales. `AuthenticationMethod=None` y `External` causan un crash de DryIoc en v4+. El provisioner usa API key y no necesita credenciales web.
+- **Permisos de directorios**: Si se borra `downloads/` con `sudo`, Docker lo recrea como `root:root`. Radarr/Sonarr rechazan root folders sin permisos de escritura. Ejecutar `sudo chown -R $USER:$USER downloads/` o usar `make create-folders` antes de `make up`.
+- **Docker Hub CDN**: El servidor puede tener problemas accediendo a `r2.cloudflarestorage.com` (CDN de Docker Hub). Configurar un mirror en `/etc/docker/daemon.json`: `{"registry-mirrors": ["https://mirror.gcr.io"]}`.

@@ -12,14 +12,30 @@ RESET  := \033[0m
         help
 
 create-folders:
-	mkdir -p {plex,qbittorrent,radarr,sonarr,prowlarr,overseerr}/config
-	mkdir -p plex/transcode
-	mkdir -p downloads/{movies,tv,incomplete}
+	mkdir -p plex/config plex/transcode
+	mkdir -p qbittorrent/config
+	mkdir -p radarr/config
+	mkdir -p sonarr/config
+	mkdir -p prowlarr/config
+	mkdir -p overseerr/config
 	mkdir -p dnsmasq recyclarr ntfy/data diun/data
+	@if [ -d "/mnt/media" ]; then \
+		printf "$(GREEN)Disco externo detectado en /mnt/media — creando estructura y symlinks...$(RESET)\n"; \
+		mkdir -p /mnt/media/movies /mnt/media/tv /mnt/media/downloads; \
+		ln -sfn /mnt/media/movies  movies; \
+		ln -sfn /mnt/media/tv      tv; \
+		ln -sfn /mnt/media/downloads downloads; \
+	else \
+		printf "$(YELLOW)/mnt/media no encontrado — creando directorios locales...$(RESET)\n"; \
+		mkdir -p downloads/movies downloads/tv downloads/incomplete; \
+	fi
 
 up:
+	@printf "$(GREEN)Construyendo imagen del provisioner...$(RESET)\n"
+	docker image inspect alpine:3.19 > /dev/null 2>&1 || docker pull alpine:3.19
+	$(COMPOSE) build provisioner
 	@printf "$(GREEN)Sembrando configuraciones iniciales...$(RESET)\n"
-	$(COMPOSE) run --rm --no-deps provisioner /seed.sh
+	$(COMPOSE) run --rm --no-deps --entrypoint /seed.sh provisioner
 	@printf "$(GREEN)Levantando todos los servicios...$(RESET)\n"
 	$(COMPOSE) up -d
 

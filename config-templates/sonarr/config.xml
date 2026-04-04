@@ -4,8 +4,6 @@
   <UpdateMechanism>Docker</UpdateMechanism>
   <AnalyticsEnabled>False</AnalyticsEnabled>
   <ApiKey>${SONARR_API_KEY}</ApiKey>
-  <AuthenticationMethod>Forms</AuthenticationMethod>
-  <AuthenticationRequired>Enabled</AuthenticationRequired>
   <Port>8989</Port>
   <BindAddress>*</BindAddress>
 </Config>
