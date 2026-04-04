@@ -14,6 +14,9 @@
 /ntfy/data/
 /diun/data/
 
+# Archivos generados por seed.sh (contienen valores resueltos del .env)
+dnsmasq/dnsmasq.conf
+
 # Entorno local — contiene credenciales
 .env
 backups/
