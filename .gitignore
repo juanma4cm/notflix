@@ -1,4 +1,5 @@
 .vscode/
+.claude/
 
 # Runtime — datos generados, no versionar
 # El prefijo / ancla las rutas a la raíz del repo
