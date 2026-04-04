@@ -95,7 +95,17 @@ sudo iptables -L DOCKER-USER -n -v
 
 > Si no se aplica esta regla, los dominios `*.notflix.internal` resolverán correctamente pero el navegador obtendrá "Connection refused" al intentar conectar.
 
-### 5. Iniciar el stack
+### 5. Configurar Tailscale Split DNS (una vez por tailnet)
+
+Necesario antes de acceder a los servicios por nombre. En `login.tailscale.com/admin/dns`:
+
+1. **DNS** → **Add nameserver** → **Custom**
+2. **Nameserver:** IP Tailscale del servidor (`TAILSCALE_IP` del `.env`)
+3. **Domain:** `notflix.internal` + activar **"Restrict to domain"**
+
+Verificar desde cualquier dispositivo Tailscale: `dig radarr.notflix.internal` → debe devolver la IP Tailscale del servidor.
+
+### 6. Iniciar el stack
 
 ```bash
 make up
@@ -106,7 +116,7 @@ make up
 2. Levanta todos los servicios en background
 3. El **provisioner** arranca automáticamente cuando los servicios están healthy y configura todas las interconexiones vía API
 
-### 6. Cambiar contraseña de qBittorrent (primer arranque)
+### 7. Cambiar contraseña de qBittorrent (primer arranque)
 
 En el primer arranque, qBittorrent genera una contraseña temporal:
 
@@ -123,7 +133,7 @@ Luego re-ejecuta el provisioner para completar la configuración de qBittorrent:
 make provision
 ```
 
-### 7. Configurar credenciales de Prowlarr, Radarr y Sonarr (primer arranque)
+### 8. Configurar credenciales de Prowlarr, Radarr y Sonarr (primer arranque)
 
 En el primer acceso a cada servicio, el wizard pregunta el método de autenticación y las credenciales:
 
@@ -133,16 +143,6 @@ En el primer acceso a cada servicio, el wizard pregunta el método de autenticac
 3. Repetir en los tres servicios
 
 > El provisioner configura todo vía API key y no requiere credenciales web. Este paso es solo para acceder a la UI.
-
-### 8. Configurar Tailscale Split DNS (una vez por tailnet)
-
-En `login.tailscale.com/admin/dns`:
-
-1. **DNS** → **Add nameserver** → **Custom**
-2. **Nameserver:** IP Tailscale del servidor
-3. **Domain:** `notflix.internal` + activar **"Restrict to domain"**
-
-Verificar: `dig radarr.notflix.internal` → debe devolver la IP Tailscale del servidor.
 
 ## Lo que se configura automáticamente
 
@@ -265,7 +265,7 @@ make up
 
 ### qBittorrent
 
-Ver **paso 6** de la instalación. Resumen: obtener contraseña temporal con `make logs-qbit | grep -i "temporary password"`, cambiarla en la WebUI y ejecutar `make provision`.
+Ver **paso 7** de la instalación. Resumen: obtener contraseña temporal con `make logs-qbit | grep -i "temporary password"`, cambiarla en la WebUI y ejecutar `make provision`.
 
 ### Prowlarr / Radarr / Sonarr — Autenticación
 
