@@ -95,16 +95,22 @@ ensure_arr_user() {
   fi
 
   # Intento 2: actualizar contraseña vía API key (usuario ya existe)
-  USER_ID=$(curl -sf -H "X-Api-Key: $apikey" "$url$api" | jq -r '.[0].id // empty')
+  GET_RESP=$(curl -s -w "\n%{http_code}" -H "X-Api-Key: $apikey" "$url$api")
+  GET_HTTP=$(echo "$GET_RESP" | tail -1)
+  GET_BODY=$(echo "$GET_RESP" | head -1)
+  log "  GET $api → HTTP $GET_HTTP"
+  USER_ID=$(echo "$GET_BODY" | jq -r '.[0].id // empty' 2>/dev/null || true)
   if [ -n "$USER_ID" ]; then
-    curl -sf -X PUT -H "X-Api-Key: $apikey" -H "Content-Type: application/json" \
+    PUT_HTTP=$(curl -s -o /dev/null -w "%{http_code}" -X PUT \
+      -H "X-Api-Key: $apikey" -H "Content-Type: application/json" \
       "$url$api/$USER_ID" \
-      -d "{\"id\":$USER_ID,\"username\":\"$user\",\"password\":\"$pass\",\"confirmPassword\":\"$pass\"}" \
-      > /dev/null \
+      -d "{\"id\":$USER_ID,\"username\":\"$user\",\"password\":\"$pass\",\"confirmPassword\":\"$pass\"}")
+    log "  PUT $api/$USER_ID → HTTP $PUT_HTTP"
+    [ "$PUT_HTTP" = "200" ] || [ "$PUT_HTTP" = "202" ] \
       && log "  → Contraseña de $user actualizada en $name." \
-      || log "  WARN: No se pudo actualizar contraseña en $name."
+      || log "  WARN: No se pudo actualizar contraseña en $name (HTTP $PUT_HTTP)."
   else
-    log "  WARN: No se encontró usuario en $name."
+    log "  WARN: No se encontró usuario en $name (HTTP $GET_HTTP). Body: $GET_BODY"
   fi
 }
 
