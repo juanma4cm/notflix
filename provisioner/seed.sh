@@ -23,4 +23,13 @@ seed_config "radarr"   "/config/radarr"
 seed_config "sonarr"   "/config/sonarr"
 seed_config "prowlarr" "/config/prowlarr"
 
+# Generar dnsmasq.conf desde template (siempre — la IP puede cambiar)
+if [ -f "/dnsmasq/dnsmasq.conf.template" ]; then
+  log "Generando dnsmasq.conf con TAILSCALE_IP=${TAILSCALE_IP}..."
+  envsubst < "/dnsmasq/dnsmasq.conf.template" > "/dnsmasq/dnsmasq.conf"
+  log "  → /dnsmasq/dnsmasq.conf generado."
+else
+  log "WARN: /dnsmasq/dnsmasq.conf.template no encontrado. Skipping."
+fi
+
 log "Seed completado."
