@@ -1,5 +1,6 @@
 {
 	# HTTP puro dentro de Tailscale (WireGuard ya cifra el tráfico)
+	http_port 80
 	auto_https off
 	admin off
 }
