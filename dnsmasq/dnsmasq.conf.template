@@ -1,0 +1,7 @@
+# Resuelve *.notflix.internal → IP Tailscale del servidor
+# Generado automáticamente por seed.sh desde .env (TAILSCALE_IP)
+address=/.notflix.internal/${TAILSCALE_IP}
+
+domain-needed
+bogus-priv
+no-resolv
