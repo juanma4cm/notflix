@@ -36,9 +36,9 @@ already_exists() { [ "$(echo "$1" | jq 'length')" -gt "0" ]; }
 # ─── Esperar a que todos los servicios estén listos ───────────────────────────
 
 wait_for "qBittorrent" "$QBIT_URL"
-wait_for "Prowlarr"    "$PROWLARR_URL/api/v1/health"
-wait_for "Radarr"      "$RADARR_URL/api/v3/health"
-wait_for "Sonarr"      "$SONARR_URL/api/v3/health"
+wait_for "Prowlarr"    "$PROWLARR_URL/api/v1/health?apikey=$PROWLARR_API_KEY"
+wait_for "Radarr"      "$RADARR_URL/api/v3/health?apikey=$RADARR_API_KEY"
+wait_for "Sonarr"      "$SONARR_URL/api/v3/health?apikey=$SONARR_API_KEY"
 
 # ─── qBittorrent ──────────────────────────────────────────────────────────────
 
