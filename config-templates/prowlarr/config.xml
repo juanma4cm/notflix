@@ -4,8 +4,8 @@
   <UpdateMechanism>Docker</UpdateMechanism>
   <AnalyticsEnabled>False</AnalyticsEnabled>
   <ApiKey>${PROWLARR_API_KEY}</ApiKey>
-  <AuthenticationMethod>Forms</AuthenticationMethod>
-  <AuthenticationRequired>Enabled</AuthenticationRequired>
+  <AuthenticationMethod>None</AuthenticationMethod>
+  <AuthenticationRequired>Disabled</AuthenticationRequired>
   <Port>9696</Port>
   <BindAddress>*</BindAddress>
 </Config>
