@@ -73,51 +73,6 @@ else
   log "      en la WebUI y luego vuelve a ejecutar 'make provision'."
 fi
 
-# ─── Usuario admin en Arr ─────────────────────────────────────────────────────
-# Estrategia:
-#   1. Intentar POST sin auth (solo funciona cuando no existe ningún usuario).
-#   2. Si falla, consultar la lista de usuarios vía API key y hacer PUT para
-#      actualizar la contraseña al valor de ARR_PASS.
-# Idempotente: siempre deja el usuario admin con la contraseña del .env.
-
-ensure_arr_user() {
-  local name=$1 url=$2 api=$3 apikey=$4
-  local user="${ARR_USER:-admin}" pass="${ARR_PASS:-admin}"
-  log "Configurando usuario $user en $name..."
-
-  # Intento 1: creación sin auth (fresh install, tabla Users vacía)
-  HTTP=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$url$api" \
-    -H "Content-Type: application/json" \
-    -d "{\"username\":\"$user\",\"password\":\"$pass\",\"confirmPassword\":\"$pass\"}")
-  if [ "$HTTP" = "200" ] || [ "$HTTP" = "201" ]; then
-    log "  → Usuario $user creado en $name."
-    return
-  fi
-
-  # Intento 2: actualizar contraseña vía API key (usuario ya existe)
-  GET_RESP=$(curl -s -w "\n%{http_code}" -H "X-Api-Key: $apikey" "$url$api")
-  GET_HTTP=$(echo "$GET_RESP" | tail -1)
-  GET_BODY=$(echo "$GET_RESP" | head -1)
-  log "  GET $api → HTTP $GET_HTTP"
-  USER_ID=$(echo "$GET_BODY" | jq -r '.[0].id // empty' 2>/dev/null || true)
-  if [ -n "$USER_ID" ]; then
-    PUT_HTTP=$(curl -s -o /dev/null -w "%{http_code}" -X PUT \
-      -H "X-Api-Key: $apikey" -H "Content-Type: application/json" \
-      "$url$api/$USER_ID" \
-      -d "{\"id\":$USER_ID,\"username\":\"$user\",\"password\":\"$pass\",\"confirmPassword\":\"$pass\"}")
-    log "  PUT $api/$USER_ID → HTTP $PUT_HTTP"
-    [ "$PUT_HTTP" = "200" ] || [ "$PUT_HTTP" = "202" ] \
-      && log "  → Contraseña de $user actualizada en $name." \
-      || log "  WARN: No se pudo actualizar contraseña en $name (HTTP $PUT_HTTP)."
-  else
-    log "  WARN: No se encontró usuario en $name (HTTP $GET_HTTP). Body: $GET_BODY"
-  fi
-}
-
-ensure_arr_user "Prowlarr" "$PROWLARR_URL" "/api/v1/user" "$PROWLARR_API_KEY"
-ensure_arr_user "Radarr"   "$RADARR_URL"   "/api/v3/user" "$RADARR_API_KEY"
-ensure_arr_user "Sonarr"   "$SONARR_URL"   "/api/v3/user" "$SONARR_API_KEY"
-
 # ─── Prowlarr → FlareSolverr ──────────────────────────────────────────────────
 
 log "Configurando FlareSolverr en Prowlarr..."

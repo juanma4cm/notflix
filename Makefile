@@ -32,6 +32,7 @@ create-folders:
 
 up:
 	@printf "$(GREEN)Construyendo imagen del provisioner...$(RESET)\n"
+	docker image inspect alpine:3.19 > /dev/null 2>&1 || docker pull alpine:3.19
 	$(COMPOSE) build provisioner
 	@printf "$(GREEN)Sembrando configuraciones iniciales...$(RESET)\n"
 	$(COMPOSE) run --rm --no-deps --entrypoint /seed.sh provisioner
