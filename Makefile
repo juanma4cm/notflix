@@ -31,6 +31,8 @@ create-folders:
 	fi
 
 up:
+	@printf "$(GREEN)Construyendo imagen del provisioner...$(RESET)\n"
+	$(COMPOSE) build provisioner
 	@printf "$(GREEN)Sembrando configuraciones iniciales...$(RESET)\n"
 	$(COMPOSE) run --rm --no-deps --entrypoint /seed.sh provisioner
 	@printf "$(GREEN)Levantando todos los servicios...$(RESET)\n"
