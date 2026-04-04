@@ -239,6 +239,54 @@ Settings > Custom Formats > Import → pegar el contenido de `custom-format-espa
 - Si cambia la IP Tailscale del servidor: actualizar `TAILSCALE_IP` en `.env` y ejecutar `make up` (seed.sh regenera `dnsmasq.conf` automáticamente).
 - Los directorios de runtime no están versionados. Hacer `make backup` antes de migrar.
 
+## Apéndice: Disco Externo para Medios
+
+`make create-folders` detecta automáticamente `/mnt/media` y crea allí la estructura de directorios (`movies/`, `tv/`, `downloads/`) con symlinks desde el proyecto. Si quieres usar un disco externo como almacenamiento de medios, sigue estos pasos.
+
+### 1. Formatear y montar el disco (primera vez)
+
+```bash
+# Identificar el disco (buscar el de mayor tamaño sin montar)
+lsblk
+
+# Formatear en ext4 (⚠️ borra todos los datos del disco)
+sudo mkfs.ext4 /dev/sdX
+
+# Crear punto de montaje y montar
+sudo mkdir -p /mnt/media
+sudo mount /dev/sdX /mnt/media
+```
+
+### 2. Montar automáticamente al arranque (fstab)
+
+Sin esta configuración el disco se pierde en cada reinicio del servidor.
+
+```bash
+# Obtener UUID del disco
+sudo blkid /dev/sdX
+
+# Añadir al fstab (sustituir UUID por el obtenido)
+echo 'UUID=<uuid-del-disco> /mnt/media ext4 defaults,nofail 0 2' | sudo tee -a /etc/fstab
+
+# Verificar que la entrada es correcta
+sudo mount -a
+df -h | grep media
+```
+
+> `nofail` evita que el servidor no arranque si el disco externo no está conectado en el momento del boot.
+
+### 3. Asignar permisos al usuario del servidor
+
+```bash
+sudo chown -R calle:calle /mnt/media
+```
+
+Sustituir `calle` por el usuario configurado en `PUID`/`PGID` del `.env`.
+
+### Nota sobre nombres de dispositivo
+
+Los nombres `/dev/sdb`, `/dev/sdc`, etc. pueden cambiar entre arranques si hay varios discos. Usar siempre **UUID** en fstab (como en el paso 2) garantiza que el disco correcto se monta en `/mnt/media` independientemente del nombre asignado.
+
 ## Licencia
 
 MIT
