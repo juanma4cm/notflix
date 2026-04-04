@@ -36,8 +36,9 @@ cp .env.example .env
 Editar `.env` con los valores del servidor:
 
 ```bash
-id -u   # → PUID
-id -g   # → PGID
+id -u          # → PUID
+id -g          # → PGID
+tailscale ip -4  # → TAILSCALE_IP
 
 # Generar API keys:
 echo "RADARR_API_KEY=$(openssl rand -hex 16)"
@@ -45,20 +46,26 @@ echo "SONARR_API_KEY=$(openssl rand -hex 16)"
 echo "PROWLARR_API_KEY=$(openssl rand -hex 16)"
 ```
 
+Variables a configurar en `.env`:
+
+| Variable | Cómo obtenerla |
+|---|---|
+| `PUID` / `PGID` | `id -u && id -g` |
+| `TAILSCALE_IP` | `tailscale ip -4` |
+| `RADARR_API_KEY` | `openssl rand -hex 16` |
+| `SONARR_API_KEY` | `openssl rand -hex 16` |
+| `PROWLARR_API_KEY` | `openssl rand -hex 16` |
+| `QBIT_PASS` | Contraseña segura a elegir |
+
 ### 2. Crear estructura de directorios
 
 ```bash
 make create-folders
 ```
 
-### 3. Configurar la IP Tailscale en dnsmasq
+Si existe `/mnt/media` (disco externo), crea `movies/`, `tv/`, `downloads/` allí y los enlaza simbólicamente. Si no, crea los directorios localmente.
 
-```bash
-tailscale ip -4
-# Editar dnsmasq/dnsmasq.conf → sustituir 100.x.x.x por la IP obtenida
-```
-
-### 4. Liberar el puerto 53 en Ubuntu (una vez)
+### 3. Liberar el puerto 53 en Ubuntu (una vez)
 
 ```bash
 sudo sed -i 's/#DNSStubListener=yes/DNSStubListener=no/' /etc/systemd/resolved.conf
@@ -66,18 +73,18 @@ sudo systemctl restart systemd-resolved
 sudo ss -tulpn | grep ':53'   # verificar que el puerto está libre
 ```
 
-### 5. Iniciar el stack
+### 4. Iniciar el stack
 
 ```bash
 make up
 ```
 
 `make up` ejecuta en orden:
-1. Siembra los `config.xml` en los servicios Arr con las API keys del `.env` (si no existen)
+1. **seed.sh** — genera `dnsmasq/dnsmasq.conf` desde el template con `TAILSCALE_IP`, y siembra los `config.xml` de los servicios Arr con las API keys del `.env` (si no existen)
 2. Levanta todos los servicios en background
-3. El `provisioner` arranca automáticamente cuando los servicios están healthy y configura todas las interconexiones vía API
+3. El **provisioner** arranca automáticamente cuando los servicios están healthy y configura todas las interconexiones vía API
 
-### 6. Configurar Tailscale Split DNS (una vez por tailnet)
+### 5. Configurar Tailscale Split DNS (una vez por tailnet)
 
 En `login.tailscale.com/admin/dns`:
 
@@ -229,7 +236,7 @@ Settings > Custom Formats > Import → pegar el contenido de `custom-format-espa
 ## Notas
 
 - El tráfico viaja cifrado por WireGuard (Tailscale) → HTTP interno es seguro.
-- Si cambia la IP Tailscale del servidor: actualizar `dnsmasq/dnsmasq.conf` + `docker compose restart dnsmasq`.
+- Si cambia la IP Tailscale del servidor: actualizar `TAILSCALE_IP` en `.env` y ejecutar `make up` (seed.sh regenera `dnsmasq.conf` automáticamente).
 - Los directorios de runtime no están versionados. Hacer `make backup` antes de migrar.
 
 ## Licencia
