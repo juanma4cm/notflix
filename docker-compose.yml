@@ -209,6 +209,7 @@ services:
       - ./sonarr/config:/config/sonarr
       - ./prowlarr/config:/config/prowlarr
       - ./config-templates:/templates:ro
+      - ./dnsmasq:/dnsmasq
     depends_on:
       qbittorrent:
         condition: service_healthy
