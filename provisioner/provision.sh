@@ -73,6 +73,23 @@ else
   log "      en la WebUI y luego vuelve a ejecutar 'make provision'."
 fi
 
+# ─── Crear usuario admin en Arr (solo si no existe ninguno) ──────────────────
+# POST /api/*/user solo funciona sin auth cuando la BD no tiene usuarios aún.
+# Si ya existe un usuario, el endpoint devuelve 401/403 y se ignora (idempotente).
+
+create_arr_user() {
+  local name=$1 url=$2 api=$3
+  log "Creando usuario ${ARR_USER:-admin} en $name (si no existe)..."
+  curl -sf -X POST "$url$api" \
+    -H "Content-Type: application/json" \
+    -d "{\"username\":\"${ARR_USER:-admin}\",\"password\":\"${ARR_PASS:-admin}\",\"confirmPassword\":\"${ARR_PASS:-admin}\"}" \
+    > /dev/null 2>&1 && log "  → Usuario creado en $name." || log "  → Ya existe o no aplica. Skipping."
+}
+
+create_arr_user "Prowlarr" "$PROWLARR_URL" "/api/v1/user"
+create_arr_user "Radarr"   "$RADARR_URL"   "/api/v3/user"
+create_arr_user "Sonarr"   "$SONARR_URL"   "/api/v3/user"
+
 # ─── Prowlarr → FlareSolverr ──────────────────────────────────────────────────
 
 log "Configurando FlareSolverr en Prowlarr..."
