@@ -17,8 +17,8 @@ services:
     image: ricardbejarano/dnsmasq:latest
     container_name: dnsmasq
     ports:
-      - "53:53/udp"
-      - "53:53/tcp"
+      - "53:1053/udp"
+      - "53:1053/tcp"
     volumes:
       - ./dnsmasq/dnsmasq.conf:/etc/dnsmasq.conf:ro
     cap_add:
