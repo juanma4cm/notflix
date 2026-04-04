@@ -73,7 +73,29 @@ sudo systemctl restart systemd-resolved
 sudo ss -tulpn | grep ':53'   # verificar que el puerto está libre
 ```
 
-### 4. Iniciar el stack
+### 4. Permitir tráfico Tailscale → Docker (una vez)
+
+Docker y Tailscale tienen reglas iptables independientes. Por defecto, el tráfico que llega por la interfaz `tailscale0` no alcanza los contenedores Docker. Hay que añadir una regla y hacerla persistente:
+
+```bash
+# Permitir tráfico de Tailscale hacia contenedores Docker
+sudo iptables -I DOCKER-USER -i tailscale0 -j ACCEPT
+
+# Instalar iptables-persistent para que la regla sobreviva reinicios
+sudo apt install iptables-persistent -y
+sudo netfilter-persistent save
+```
+
+Verificar que la regla está activa:
+
+```bash
+sudo iptables -L DOCKER-USER -n -v
+# Debe aparecer: ACCEPT all -- tailscale0 *
+```
+
+> Si no se aplica esta regla, los dominios `*.notflix.internal` resolverán correctamente pero el navegador obtendrá "Connection refused" al intentar conectar.
+
+### 5. Iniciar el stack
 
 ```bash
 make up
@@ -238,6 +260,8 @@ Settings > Custom Formats > Import → pegar el contenido de `custom-format-espa
 - El tráfico viaja cifrado por WireGuard (Tailscale) → HTTP interno es seguro.
 - Si cambia la IP Tailscale del servidor: actualizar `TAILSCALE_IP` en `.env` y ejecutar `make up` (seed.sh regenera `dnsmasq.conf` automáticamente).
 - Los directorios de runtime no están versionados. Hacer `make backup` antes de migrar.
+- **Tailscale + Docker iptables:** La regla `iptables -I DOCKER-USER -i tailscale0 -j ACCEPT` es obligatoria. Sin ella el DNS funciona pero HTTP falla. Debe persistirse con `netfilter-persistent save`.
+- **dnsmasq:** La imagen `ricardbejarano/dnsmasq` escucha internamente en el puerto 1053 (no 53). El mapeo en `docker-compose.yml` es `53:1053`.
 
 ## Apéndice: Disco Externo para Medios
 

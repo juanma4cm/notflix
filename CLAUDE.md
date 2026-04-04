@@ -11,6 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Ubuntu Server + Docker Engine v2 + Docker Compose plugin
 - Tailscale instalado y autenticado
 - Puerto 53 libre (deshabilitar stub listener de systemd-resolved)
+- Regla iptables para Tailscale+Docker (ver sección DNS más abajo)
 
 ## Common Commands
 
@@ -155,3 +156,18 @@ make up   # seed.sh regenera dnsmasq.conf, luego compose up reinicia dnsmasq
 
 Configuración única en Tailscale admin (una vez por tailnet):
 DNS → Add nameserver → Custom → IP Tailscale → Domain: `notflix.internal` → Restrict to domain.
+
+### iptables: Tailscale + Docker
+
+Docker y Tailscale gestionan iptables de forma independiente. Sin configuración adicional, el tráfico de Tailscale no alcanza los contenedores Docker (DNS funciona, HTTP falla). Paso obligatorio en cada servidor nuevo:
+
+```bash
+sudo iptables -I DOCKER-USER -i tailscale0 -j ACCEPT
+sudo apt install iptables-persistent -y
+sudo netfilter-persistent save
+```
+
+### Notas de implementación
+
+- **dnsmasq**: La imagen `ricardbejarano/dnsmasq` escucha en el puerto **1053** internamente (no 53, para evitar privilegios root). El mapeo en `docker-compose.yml` es `53:1053`.
+- **Caddy**: Los site blocks deben llevar el prefijo `http://` explícito. Sin él, Caddy crea un listener TLS en puerto 443 aunque `auto_https off` esté configurado.
