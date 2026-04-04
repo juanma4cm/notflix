@@ -106,7 +106,24 @@ make up
 2. Levanta todos los servicios en background
 3. El **provisioner** arranca automáticamente cuando los servicios están healthy y configura todas las interconexiones vía API
 
-### 5. Configurar Tailscale Split DNS (una vez por tailnet)
+### 6. Cambiar contraseña de qBittorrent (primer arranque)
+
+En el primer arranque, qBittorrent genera una contraseña temporal:
+
+```bash
+make logs-qbit | grep -i "temporary password"
+# Buscar: "A temporary password is provided for this session: XXXXXX"
+```
+
+Accede a **http://qbittorrent.notflix.internal** → **Tools → Options → Web UI → Password** → cambia al valor de `QBIT_PASS` del `.env` → Apply.
+
+Luego re-ejecuta el provisioner para completar la configuración de qBittorrent:
+
+```bash
+make provision
+```
+
+### 7. Configurar Tailscale Split DNS (una vez por tailnet)
 
 En `login.tailscale.com/admin/dns`:
 
@@ -131,7 +148,7 @@ Tras `make up`, el provisioner configura:
 | Biblioteca de Plex | Manual (requiere PLEX_CLAIM token) |
 | Overseerr (requiere OAuth Plex) | Manual |
 
-> **Nota sobre qBittorrent:** En el primer arranque genera una contraseña temporal visible en `make logs-qbit`. Cámbiala en la WebUI al valor de `QBIT_PASS` del `.env` y ejecuta `make provision` de nuevo.
+> **qBittorrent:** La configuración del download client en Radarr/Sonarr requiere que la contraseña de qBittorrent ya esté cambiada al valor de `QBIT_PASS`. Ver paso 6 de la instalación.
 
 ## Versiones y Actualizaciones
 
@@ -235,12 +252,7 @@ make up
 
 ### qBittorrent
 
-```bash
-make logs-qbit
-# Buscar: "A temporary password is provided for this session: XXXXXX"
-```
-
-Cambiar la contraseña en Tools > Options > Web UI > Password al valor de `QBIT_PASS` del `.env`.
+Ver **paso 6** de la instalación. Resumen: obtener contraseña temporal con `make logs-qbit | grep -i "temporary password"`, cambiarla en la WebUI y ejecutar `make provision`.
 
 ### Prowlarr
 
