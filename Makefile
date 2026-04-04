@@ -18,8 +18,17 @@ create-folders:
 	mkdir -p sonarr/config
 	mkdir -p prowlarr/config
 	mkdir -p overseerr/config
-	mkdir -p downloads/movies downloads/tv downloads/incomplete
 	mkdir -p dnsmasq recyclarr ntfy/data diun/data
+	@if [ -d "/mnt/media" ]; then \
+		printf "$(GREEN)Disco externo detectado en /mnt/media — creando estructura y symlinks...$(RESET)\n"; \
+		mkdir -p /mnt/media/movies /mnt/media/tv /mnt/media/downloads; \
+		ln -sfn /mnt/media/movies  movies; \
+		ln -sfn /mnt/media/tv      tv; \
+		ln -sfn /mnt/media/downloads downloads; \
+	else \
+		printf "$(YELLOW)/mnt/media no encontrado — creando directorios locales...$(RESET)\n"; \
+		mkdir -p downloads/movies downloads/tv downloads/incomplete; \
+	fi
 
 up:
 	@printf "$(GREEN)Sembrando configuraciones iniciales...$(RESET)\n"
