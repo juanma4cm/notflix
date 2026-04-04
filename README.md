@@ -256,7 +256,7 @@ Ver **paso 6** de la instalación. Resumen: obtener contraseña temporal con `ma
 
 ### Prowlarr
 
-- Añadir indexers en http://prowlarr.notflix.internal → Settings > Indexers
+- Añadir indexers en `http://prowlarr.notflix.internal` → Settings > Indexers
 
 ### Custom Format Español
 
