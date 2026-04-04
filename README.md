@@ -123,7 +123,18 @@ Luego re-ejecuta el provisioner para completar la configuración de qBittorrent:
 make provision
 ```
 
-### 7. Configurar Tailscale Split DNS (una vez por tailnet)
+### 7. Configurar credenciales de Prowlarr, Radarr y Sonarr (primer arranque)
+
+En el primer acceso a cada servicio, el wizard pregunta el método de autenticación y las credenciales:
+
+1. Acceder a **http://prowlarr.notflix.internal**, **http://radarr.notflix.internal** y **http://sonarr.notflix.internal**
+2. En el wizard elegir **Forms** y crear usuario (ej: `admin` / `admin`)  
+   — o seleccionar **"Authentication Disabled"** si se prefiere sin login (la red ya está protegida por Tailscale)
+3. Repetir en los tres servicios
+
+> El provisioner configura todo vía API key y no requiere credenciales web. Este paso es solo para acceder a la UI.
+
+### 8. Configurar Tailscale Split DNS (una vez por tailnet)
 
 En `login.tailscale.com/admin/dns`:
 
@@ -149,6 +160,8 @@ Tras `make up`, el provisioner configura:
 | Overseerr (requiere OAuth Plex) | Manual |
 
 > **qBittorrent:** La configuración del download client en Radarr/Sonarr requiere que la contraseña de qBittorrent ya esté cambiada al valor de `QBIT_PASS`. Ver paso 6 de la instalación.
+>
+> **Prowlarr / Radarr / Sonarr:** En el primer acceso la UI muestra un wizard para configurar autenticación. Ver paso 7.
 
 ## Versiones y Actualizaciones
 
@@ -254,7 +267,11 @@ make up
 
 Ver **paso 6** de la instalación. Resumen: obtener contraseña temporal con `make logs-qbit | grep -i "temporary password"`, cambiarla en la WebUI y ejecutar `make provision`.
 
-### Prowlarr
+### Prowlarr / Radarr / Sonarr — Autenticación
+
+Ver **paso 7** de la instalación. En el primer acceso aparece un wizard para elegir método de autenticación y crear credenciales. El provisioner no necesita credenciales web (usa API key).
+
+### Prowlarr — Indexers
 
 - Añadir indexers en `http://prowlarr.notflix.internal` → Settings > Indexers
 

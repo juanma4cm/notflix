@@ -171,3 +171,6 @@ sudo netfilter-persistent save
 
 - **dnsmasq**: La imagen `ricardbejarano/dnsmasq` escucha en el puerto **1053** internamente (no 53, para evitar privilegios root). El mapeo en `docker-compose.yml` es `53:1053`.
 - **Caddy**: Los site blocks deben llevar el prefijo `http://` explícito. Sin él, Caddy crea un listener TLS en puerto 443 aunque `auto_https off` esté configurado.
+- **Arr auth (Prowlarr/Radarr/Sonarr)**: Los templates de `config-templates/` NO incluyen `<AuthenticationMethod>`. Sin esa línea, los servicios muestran un wizard en el primer acceso web donde el usuario elige el método y crea credenciales. `AuthenticationMethod=None` y `External` causan un crash de DryIoc en v4+. El provisioner usa API key y no necesita credenciales web.
+- **Permisos de directorios**: Si se borra `downloads/` con `sudo`, Docker lo recrea como `root:root`. Radarr/Sonarr rechazan root folders sin permisos de escritura. Ejecutar `sudo chown -R $USER:$USER downloads/` o usar `make create-folders` antes de `make up`.
+- **Docker Hub CDN**: El servidor puede tener problemas accediendo a `r2.cloudflarestorage.com` (CDN de Docker Hub). Configurar un mirror en `/etc/docker/daemon.json`: `{"registry-mirrors": ["https://mirror.gcr.io"]}`.
