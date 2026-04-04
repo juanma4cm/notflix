@@ -234,7 +234,7 @@ if ! already_exists "$EXISTING"; then
       "onHealthIssue": true,
       "fields": [
         {"name": "url",    "value": "http://ntfy:80/notflix-movies"},
-        {"name": "method", "value": 0}
+        {"name": "method", "value": 1}
       ]
     }' > /dev/null
   log "ntfy añadido a Radarr."
@@ -256,7 +256,7 @@ if ! already_exists "$EXISTING"; then
       "onHealthIssue": true,
       "fields": [
         {"name": "url",    "value": "http://ntfy:80/notflix-series"},
-        {"name": "method", "value": 0}
+        {"name": "method", "value": 1}
       ]
     }' > /dev/null
   log "ntfy añadido a Sonarr."
