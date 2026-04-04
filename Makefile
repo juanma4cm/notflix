@@ -50,6 +50,8 @@ status:
 	$(COMPOSE) ps
 
 provision:
+	@printf "$(GREEN)Construyendo imagen del provisioner...$(RESET)\n"
+	$(COMPOSE) build provisioner
 	@printf "$(GREEN)Ejecutando provisioner...$(RESET)\n"
 	$(COMPOSE) run --rm provisioner
 
