@@ -162,19 +162,6 @@ services:
     networks:
       - media-network
 
-  ntfy:
-    image: binwiederhier/ntfy:latest
-    container_name: ntfy
-    command: serve --config /etc/ntfy/server.yml
-    volumes:
-      - ./ntfy/server.yml:/etc/ntfy/server.yml:ro
-      - ./ntfy/data:/var/lib/ntfy
-    environment:
-      - TZ=${TZ:-Europe/Madrid}
-    restart: unless-stopped
-    networks:
-      - media-network
-
   diun:
     image: crazymax/diun:latest
     container_name: diun
