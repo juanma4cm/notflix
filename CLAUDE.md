@@ -48,14 +48,14 @@ Dispositivo Tailscale → Split DNS → dnsmasq (puerto 53) → IP Tailscale del
 | FlareSolverr | 8191 | http://flaresolverr.notflix.internal |
 | Radarr | 7878 | http://radarr.notflix.internal |
 | Sonarr | 8989 | http://sonarr.notflix.internal |
-| Plex | 32400 | http://plex.notflix.internal |
-| Overseerr | 5055 | http://overseerr.notflix.internal |
+| Jellyfin | 8096 | http://jellyfin.notflix.internal |
+| Jellyseerr | 5055 | http://jellyseerr.notflix.internal |
 | ntfy | 80 | http://ntfy.notflix.internal |
 | Recyclarr | — | one-shot (`make recyclarr`) |
 | Diun | — | daemon, notifica vía ntfy |
 
-**Data flow:** Prowlarr (+ FlareSolverr) → Radarr/Sonarr → qBittorrent → `downloads/` → Plex
-**Requests flow:** Overseerr → Radarr/Sonarr → (download flow above)
+**Data flow:** Prowlarr (+ FlareSolverr) → Radarr/Sonarr → qBittorrent → `downloads/` → Jellyfin
+**Requests flow:** Jellyseerr → Radarr/Sonarr → (download flow above)
 **Notifications:** Radarr/Sonarr → ntfy → móvil via Tailscale
 
 ## Configuración vía `.env`
@@ -130,7 +130,7 @@ Versionado:
 No versionado (`.gitignore`):
 - `.env` — contiene credenciales y `TAILSCALE_IP`
 - `dnsmasq/dnsmasq.conf` — generado por seed.sh (contiene IP resuelta)
-- `/radarr/`, `/sonarr/`, `/prowlarr/`, `/qbittorrent/`, `/plex/`, `/overseerr/` — datos runtime
+- `/radarr/`, `/sonarr/`, `/prowlarr/`, `/qbittorrent/`, `/jellyfin/`, `/jellyseerr/` — datos runtime
 - `/ntfy/data/`, `/diun/data/` — datos runtime (configs sí versionadas)
 - `backups/`
 
