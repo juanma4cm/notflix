@@ -50,13 +50,12 @@ Dispositivo Tailscale → Split DNS → dnsmasq (puerto 53) → IP Tailscale del
 | Sonarr | 8989 | http://sonarr.notflix.internal |
 | Jellyfin | 8096 | http://jellyfin.notflix.internal |
 | Jellyseerr | 5055 | http://jellyseerr.notflix.internal |
-| ntfy | 80 | http://ntfy.notflix.internal |
 | Recyclarr | — | one-shot (`make recyclarr`) |
-| Diun | — | daemon, notifica vía ntfy |
+| Diun | — | daemon, monitoriza actualizaciones de imágenes |
 
 **Data flow:** Prowlarr (+ FlareSolverr) → Radarr/Sonarr → qBittorrent → `downloads/` → Jellyfin
 **Requests flow:** Jellyseerr → Radarr/Sonarr → (download flow above)
-**Notifications:** Radarr/Sonarr → ntfy → móvil via Tailscale
+**Updates monitoring:** Diun → detecta nuevas versiones de imágenes Docker
 
 ## Configuración vía `.env`
 
@@ -131,7 +130,7 @@ No versionado (`.gitignore`):
 - `.env` — contiene credenciales y `TAILSCALE_IP`
 - `dnsmasq/dnsmasq.conf` — generado por seed.sh (contiene IP resuelta)
 - `/radarr/`, `/sonarr/`, `/prowlarr/`, `/qbittorrent/`, `/jellyfin/`, `/jellyseerr/` — datos runtime
-- `/ntfy/data/`, `/diun/data/` — datos runtime (configs sí versionadas)
+- `/diun/data/` — datos runtime (config sí versionada)
 - `backups/`
 
 ## Adding or Modifying Services
