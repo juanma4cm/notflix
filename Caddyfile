@@ -34,6 +34,3 @@ http://jellyseerr.{$DOMAIN:notflix.internal} {
 	reverse_proxy jellyseerr:5055
 }
 
-http://ntfy.{$DOMAIN:notflix.internal} {
-	reverse_proxy ntfy:80
-}
