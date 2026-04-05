@@ -4,12 +4,12 @@
 # Runtime — datos generados, no versionar
 # El prefijo / ancla las rutas a la raíz del repo
 /downloads/
-/plex/
+/jellyfin/
+/jellyseerr/
 /prowlarr/
 /qbittorrent/
 /radarr/
 /sonarr/
-/overseerr/
 
 # Datos de runtime de servicios con config versionada
 /ntfy/data/
