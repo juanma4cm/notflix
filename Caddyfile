@@ -26,17 +26,12 @@ http://flaresolverr.{$DOMAIN:notflix.internal} {
 	reverse_proxy flaresolverr:8191
 }
 
-http://plex.{$DOMAIN:notflix.internal} {
-	reverse_proxy plex-server:32400 {
-		header_up Host {upstream_hostport}
-		header_up X-Real-IP {remote_host}
-		header_up X-Forwarded-For {remote_host}
-		header_up X-Forwarded-Proto {scheme}
-	}
+http://jellyfin.{$DOMAIN:notflix.internal} {
+	reverse_proxy jellyfin:8096
 }
 
-http://overseerr.{$DOMAIN:notflix.internal} {
-	reverse_proxy overseerr:5055
+http://jellyseerr.{$DOMAIN:notflix.internal} {
+	reverse_proxy jellyseerr:5055
 }
 
 http://ntfy.{$DOMAIN:notflix.internal} {
