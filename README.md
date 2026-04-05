@@ -12,7 +12,6 @@ Stack Docker para servidor multimedia personal. Accesible desde cualquier dispos
 | Sonarr | http://sonarr.notflix.internal | Gestión automatizada de series |
 | Prowlarr | http://prowlarr.notflix.internal | Gestor centralizado de indexadores |
 | qBittorrent | http://qbittorrent.notflix.internal | Cliente torrent |
-| ntfy | http://ntfy.notflix.internal | Notificaciones push |
 | FlareSolverr | http://flaresolverr.notflix.internal | Bypass de protecciones Cloudflare |
 
 > Los dominios `*.notflix.internal` son accesibles desde cualquier dispositivo en la red Tailscale.
@@ -154,7 +153,6 @@ Tras `make up`, el provisioner configura:
 | Prowlarr ↔ Radarr / Sonarr (fullSync) | Automático |
 | qBittorrent como download client en Radarr y Sonarr | Automático |
 | Root folders `/movies` y `/tv` | Automático |
-| Notificaciones ntfy en Radarr y Sonarr | Automático |
 | Indexers en Prowlarr | Manual (requieren credenciales) |
 | Jellyfin (bibliotecas y cuenta admin) | Manual (wizard web) |
 | Jellyseerr (conexión Jellyfin + Radarr/Sonarr) | Manual (wizard web) |
@@ -203,17 +201,6 @@ make recyclarr-list     # Ver custom formats disponibles para Radarr
 
 La configuración está en `recyclarr/recyclarr.yml` y es versionada junto al proyecto.
 
-## Notificaciones Push
-
-ntfy envía notificaciones cuando se completan descargas o hay problemas de salud.
-
-**Suscribirse desde el móvil** (requiere Tailscale en el dispositivo):
-
-- App ntfy (iOS/Android) → suscribirse a:
-  - `http://ntfy.notflix.internal/notflix-movies`
-  - `http://ntfy.notflix.internal/notflix-series`
-  - `http://ntfy.notflix.internal/notflix-updates` (actualizaciones de imágenes via Diun)
-
 ## Peticiones de Contenido — Jellyseerr
 
 1. Acceder a http://jellyseerr.notflix.internal
@@ -260,7 +247,7 @@ make up
 | `make recyclarr` | Sincroniza quality profiles con TRaSH-Guides |
 | `make backup` | Backup de configuraciones |
 | `make backup-full` | Backup completo con `.env` |
-| `make logs-<servicio>` | Logs individuales: `jellyfin`, `jellyseerr`, `qbit`, `radarr`, `sonarr`, `prowlarr`, `flare`, `caddy`, `provisioner`, `ntfy`, `diun` |
+| `make logs-<servicio>` | Logs individuales: `jellyfin`, `jellyseerr`, `qbit`, `radarr`, `sonarr`, `prowlarr`, `flare`, `caddy`, `provisioner`, `diun` |
 
 ## Configuración Manual Post-Arranque
 
