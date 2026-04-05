@@ -8,7 +8,7 @@ RESET  := \033[0m
 .PHONY: create-folders up down restart status provision recyclarr backup backup-full \
         logs logs-jellyfin logs-jellyseerr logs-qbit logs-radarr logs-sonarr \
         logs-prowlarr logs-flare logs-caddy logs-provisioner \
-        logs-ntfy logs-diun \
+        logs-diun \
         help
 
 create-folders:
@@ -18,7 +18,7 @@ create-folders:
 	mkdir -p radarr/config
 	mkdir -p sonarr/config
 	mkdir -p prowlarr/config
-	mkdir -p dnsmasq recyclarr ntfy/data diun/data
+	mkdir -p dnsmasq recyclarr diun/data
 	@if [ -d "/mnt/media" ]; then \
 		printf "$(GREEN)Disco externo detectado en /mnt/media — creando estructura y symlinks...$(RESET)\n"; \
 		mkdir -p /mnt/media/movies /mnt/media/tv /mnt/media/downloads; \
@@ -67,7 +67,7 @@ backup:
 	@tar -czf $(BACKUP_DIR)/notflix-backup-$$(date +%Y%m%d-%H%M%S).tar.gz \
 	  radarr/config sonarr/config prowlarr/config \
 	  qbittorrent/config jellyfin/config jellyseerr/config recyclarr \
-	  dnsmasq ntfy/server.yml diun/diun.yml \
+	  dnsmasq diun/diun.yml \
 	  Caddyfile docker-compose.yml .env.example
 	@printf "$(GREEN)Backup guardado en $(BACKUP_DIR)/$(RESET)\n"
 	@ls -lh $(BACKUP_DIR)/ | tail -5
@@ -106,9 +106,6 @@ logs-caddy:
 logs-provisioner:
 	$(COMPOSE) logs provisioner
 
-logs-ntfy:
-	$(COMPOSE) logs -f ntfy
-
 logs-diun:
 	$(COMPOSE) logs -f diun
 
@@ -126,4 +123,4 @@ help:
 	@printf "  make logs            - Logs de todos los servicios\n"
 	@printf "  make logs-<servicio> - Logs individuales: jellyfin, jellyseerr, qbit,\n"
 	@printf "                         radarr, sonarr, prowlarr, flare, caddy,\n"
-	@printf "                         provisioner, ntfy, diun\n"
+	@printf "                         provisioner, diun\n"
