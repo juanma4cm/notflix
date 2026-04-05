@@ -218,52 +218,6 @@ if ! already_exists "$EXISTING"; then
   log "Root folder /tv añadido a Sonarr."
 fi
 
-# ─── Notificaciones ntfy ──────────────────────────────────────────────────────
-
-log "Configurando notificaciones ntfy en Radarr..."
-EXISTING=$(radarr_api "notification" | jq '[.[] | select(.name == "ntfy")]')
-if ! already_exists "$EXISTING"; then
-  radarr_api "notification" \
-    -X POST -H "Content-Type: application/json" \
-    -d '{
-      "name": "ntfy",
-      "implementation": "Webhook",
-      "configContract": "WebhookSettings",
-      "onDownload": true,
-      "onUpgrade": true,
-      "onHealthIssue": true,
-      "fields": [
-        {"name": "url",    "value": "http://ntfy:80/notflix-movies"},
-        {"name": "method", "value": 1}
-      ]
-    }' > /dev/null
-  log "ntfy añadido a Radarr."
-else
-  log "ntfy ya existe en Radarr. Skipping."
-fi
-
-log "Configurando notificaciones ntfy en Sonarr..."
-EXISTING=$(sonarr_api "notification" | jq '[.[] | select(.name == "ntfy")]')
-if ! already_exists "$EXISTING"; then
-  sonarr_api "notification" \
-    -X POST -H "Content-Type: application/json" \
-    -d '{
-      "name": "ntfy",
-      "implementation": "Webhook",
-      "configContract": "WebhookSettings",
-      "onDownload": true,
-      "onUpgrade": true,
-      "onHealthIssue": true,
-      "fields": [
-        {"name": "url",    "value": "http://ntfy:80/notflix-series"},
-        {"name": "method", "value": 1}
-      ]
-    }' > /dev/null
-  log "ntfy añadido a Sonarr."
-else
-  log "ntfy ya existe en Sonarr. Skipping."
-fi
-
 # ─── Resumen ──────────────────────────────────────────────────────────────────
 
 log "=== Provisioning completado ==="
@@ -272,10 +226,9 @@ log "  OK Prowlarr ↔ Radarr (fullSync)"
 log "  OK Prowlarr ↔ Sonarr (fullSync)"
 log "  OK Radarr → qBittorrent + root folder /movies"
 log "  OK Sonarr  → qBittorrent + root folder /tv"
-log "  OK Radarr → ntfy (webhook)"
-log "  OK Sonarr  → ntfy (webhook)"
 log ""
 log "Pendiente manual:"
 log "  • qBittorrent: cambiar contraseña temporal y ejecutar 'make provision' (si falló la auth)"
 log "  • Prowlarr: añadir indexers (requieren credenciales externas)"
-log "  • Plex: configurar biblioteca (requiere PLEX_CLAIM token)"
+log "  • Jellyfin: configurar bibliotecas vía wizard web"
+log "  • Jellyseerr: conectar con Jellyfin vía wizard web"

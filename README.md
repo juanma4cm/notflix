@@ -6,13 +6,12 @@ Stack Docker para servidor multimedia personal. Accesible desde cualquier dispos
 
 | Servicio | URL | Descripción |
 |---|---|---|
-| Plex | http://plex.notflix.internal | Streaming multimedia |
-| Overseerr | http://overseerr.notflix.internal | Peticiones de contenido |
+| Jellyfin | http://jellyfin.notflix.internal | Streaming multimedia (open source, sin paywall) |
+| Jellyseerr | http://jellyseerr.notflix.internal | Peticiones de contenido |
 | Radarr | http://radarr.notflix.internal | Gestión automatizada de películas |
 | Sonarr | http://sonarr.notflix.internal | Gestión automatizada de series |
 | Prowlarr | http://prowlarr.notflix.internal | Gestor centralizado de indexadores |
 | qBittorrent | http://qbittorrent.notflix.internal | Cliente torrent |
-| ntfy | http://ntfy.notflix.internal | Notificaciones push |
 | FlareSolverr | http://flaresolverr.notflix.internal | Bypass de protecciones Cloudflare |
 
 > Los dominios `*.notflix.internal` son accesibles desde cualquier dispositivo en la red Tailscale.
@@ -154,10 +153,9 @@ Tras `make up`, el provisioner configura:
 | Prowlarr ↔ Radarr / Sonarr (fullSync) | Automático |
 | qBittorrent como download client en Radarr y Sonarr | Automático |
 | Root folders `/movies` y `/tv` | Automático |
-| Notificaciones ntfy en Radarr y Sonarr | Automático |
 | Indexers en Prowlarr | Manual (requieren credenciales) |
-| Biblioteca de Plex | Manual (requiere PLEX_CLAIM token) |
-| Overseerr (requiere OAuth Plex) | Manual |
+| Jellyfin (bibliotecas y cuenta admin) | Manual (wizard web) |
+| Jellyseerr (conexión Jellyfin + Radarr/Sonarr) | Manual (wizard web) |
 
 > **qBittorrent:** La configuración del download client en Radarr/Sonarr requiere que la contraseña de qBittorrent ya esté cambiada al valor de `QBIT_PASS`. Ver paso 6 de la instalación.
 >
@@ -187,7 +185,8 @@ docker inspect radarr      | jq -r '.[0].Config.Image'
 docker inspect sonarr      | jq -r '.[0].Config.Image'
 docker inspect prowlarr    | jq -r '.[0].Config.Image'
 docker inspect qbittorrent | jq -r '.[0].Config.Image'
-docker inspect plex-server | jq -r '.[0].Config.Image'
+docker inspect jellyfin    | jq -r '.[0].Config.Image'
+docker inspect jellyseerr  | jq -r '.[0].Config.Image'
 # Copiar las versiones al .env
 ```
 
@@ -202,22 +201,11 @@ make recyclarr-list     # Ver custom formats disponibles para Radarr
 
 La configuración está en `recyclarr/recyclarr.yml` y es versionada junto al proyecto.
 
-## Notificaciones Push
+## Peticiones de Contenido — Jellyseerr
 
-ntfy envía notificaciones cuando se completan descargas o hay problemas de salud.
-
-**Suscribirse desde el móvil** (requiere Tailscale en el dispositivo):
-
-- App ntfy (iOS/Android) → suscribirse a:
-  - `http://ntfy.notflix.internal/notflix-movies`
-  - `http://ntfy.notflix.internal/notflix-series`
-  - `http://ntfy.notflix.internal/notflix-updates` (actualizaciones de imágenes via Diun)
-
-## Peticiones de Contenido — Overseerr
-
-1. Acceder a http://overseerr.notflix.internal
-2. Login con cuenta Plex
-3. Conectar Plex server (autodetección en `media-network`)
+1. Acceder a http://jellyseerr.notflix.internal
+2. En el wizard seleccionar **Jellyfin** como media server
+3. URL de Jellyfin: `http://jellyfin:8096`, introducir credenciales del admin de Jellyfin
 4. Añadir Radarr: URL `http://radarr:7878`, API key desde `.env`
 5. Añadir Sonarr: URL `http://sonarr:8989`, API key desde `.env`
 
@@ -259,7 +247,7 @@ make up
 | `make recyclarr` | Sincroniza quality profiles con TRaSH-Guides |
 | `make backup` | Backup de configuraciones |
 | `make backup-full` | Backup completo con `.env` |
-| `make logs-<servicio>` | Logs individuales: `plex`, `qbit`, `radarr`, `sonarr`, `prowlarr`, `flare`, `caddy`, `provisioner`, `overseerr`, `ntfy`, `diun` |
+| `make logs-<servicio>` | Logs individuales: `jellyfin`, `jellyseerr`, `qbit`, `radarr`, `sonarr`, `prowlarr`, `flare`, `caddy`, `provisioner`, `diun` |
 
 ## Configuración Manual Post-Arranque
 
@@ -279,10 +267,17 @@ Ver **paso 7** de la instalación. En el primer acceso aparece un wizard para el
 
 Settings > Custom Formats > Import → pegar el contenido de `custom-format-español.json`
 
-### Plex
+### Jellyfin
 
-- Bibliotecas: Movies → `/movies`, TV Shows → `/tv`
-- Settings > Remote Access > Custom server access URLs: `http://plex.notflix.internal`
+- Wizard inicial: crear cuenta admin, añadir biblioteca Movies → `/movies`, TV Shows → `/tv`
+- Idioma: Dashboard → Administration → General → Language → Español
+- Clientes móviles: **Swiftfin** (iOS, gratuito) / **Jellyfin** oficial (Android)
+
+### Jellyseerr
+
+- Wizard inicial: seleccionar Jellyfin como media server
+- URL interna: `http://jellyfin:8096` + credenciales admin de Jellyfin
+- Añadir Radarr y Sonarr con URLs internas y API keys del `.env`
 
 ## Notas
 

@@ -2,12 +2,6 @@ providers:
   docker:
     watchStopped: false
 
-notif:
-  ntfy:
-    endpoint: http://ntfy:80
-    topic: notflix-updates
-    priority: 3
-
 watch:
   workers: 5
   schedule: "0 9 * * 1"  # Lunes a las 9:00

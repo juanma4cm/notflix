@@ -6,19 +6,19 @@ YELLOW := \033[0;33m
 RESET  := \033[0m
 
 .PHONY: create-folders up down restart status provision recyclarr backup backup-full \
-        logs logs-plex logs-qbit logs-radarr logs-sonarr \
+        logs logs-jellyfin logs-jellyseerr logs-qbit logs-radarr logs-sonarr \
         logs-prowlarr logs-flare logs-caddy logs-provisioner \
-        logs-overseerr logs-ntfy logs-diun \
+        logs-diun \
         help
 
 create-folders:
-	mkdir -p plex/config plex/transcode
+	mkdir -p jellyfin/config
+	mkdir -p jellyseerr/config
 	mkdir -p qbittorrent/config
 	mkdir -p radarr/config
 	mkdir -p sonarr/config
 	mkdir -p prowlarr/config
-	mkdir -p overseerr/config
-	mkdir -p dnsmasq recyclarr ntfy/data diun/data
+	mkdir -p dnsmasq recyclarr diun/data
 	@if [ -d "/mnt/media" ]; then \
 		printf "$(GREEN)Disco externo detectado en /mnt/media — creando estructura y symlinks...$(RESET)\n"; \
 		mkdir -p /mnt/media/movies /mnt/media/tv /mnt/media/downloads; \
@@ -66,8 +66,8 @@ backup:
 	@mkdir -p $(BACKUP_DIR)
 	@tar -czf $(BACKUP_DIR)/notflix-backup-$$(date +%Y%m%d-%H%M%S).tar.gz \
 	  radarr/config sonarr/config prowlarr/config \
-	  qbittorrent/config overseerr/config recyclarr \
-	  dnsmasq ntfy/server.yml diun/diun.yml \
+	  qbittorrent/config jellyfin/config jellyseerr/config recyclarr \
+	  dnsmasq diun/diun.yml \
 	  Caddyfile docker-compose.yml .env.example
 	@printf "$(GREEN)Backup guardado en $(BACKUP_DIR)/$(RESET)\n"
 	@ls -lh $(BACKUP_DIR)/ | tail -5
@@ -79,8 +79,11 @@ backup-full: backup
 logs:
 	$(COMPOSE) logs -f
 
-logs-plex:
-	$(COMPOSE) logs -f plex
+logs-jellyfin:
+	$(COMPOSE) logs -f jellyfin
+
+logs-jellyseerr:
+	$(COMPOSE) logs -f jellyseerr
 
 logs-qbit:
 	$(COMPOSE) logs -f qbittorrent
@@ -103,12 +106,6 @@ logs-caddy:
 logs-provisioner:
 	$(COMPOSE) logs provisioner
 
-logs-overseerr:
-	$(COMPOSE) logs -f overseerr
-
-logs-ntfy:
-	$(COMPOSE) logs -f ntfy
-
 logs-diun:
 	$(COMPOSE) logs -f diun
 
@@ -124,6 +121,6 @@ help:
 	@printf "  make backup          - Backup de configuraciones (sin .env)\n"
 	@printf "  make backup-full     - Backup completo incluyendo .env (contiene credenciales)\n"
 	@printf "  make logs            - Logs de todos los servicios\n"
-	@printf "  make logs-<servicio> - Logs individuales: plex, qbit, radarr, sonarr,\n"
-	@printf "                         prowlarr, flare, caddy, provisioner,\n"
-	@printf "                         overseerr, ntfy, diun\n"
+	@printf "  make logs-<servicio> - Logs individuales: jellyfin, jellyseerr, qbit,\n"
+	@printf "                         radarr, sonarr, prowlarr, flare, caddy,\n"
+	@printf "                         provisioner, diun\n"
