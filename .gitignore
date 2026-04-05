@@ -12,7 +12,6 @@
 /sonarr/
 
 # Datos de runtime de servicios con config versionada
-/ntfy/data/
 /diun/data/
 
 # Archivos generados por seed.sh (contienen valores resueltos del .env)
