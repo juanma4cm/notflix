@@ -91,7 +91,7 @@ services:
     volumes:
       - ./radarr/config:/config
       - ./downloads:/downloads
-      - ./downloads/movies:/movies
+      - ./movies:/movies
     restart: unless-stopped
     networks:
       - media-network
@@ -112,7 +112,7 @@ services:
     volumes:
       - ./sonarr/config:/config
       - ./downloads:/downloads
-      - ./downloads/tv:/tv
+      - ./tv:/tv
     restart: unless-stopped
     networks:
       - media-network
@@ -132,8 +132,8 @@ services:
       - TZ=${TZ:-Europe/Madrid}
     volumes:
       - ./jellyfin/config:/config
-      - ./downloads/movies:/movies:ro
-      - ./downloads/tv:/tv:ro
+      - ./movies:/movies:ro
+      - ./tv:/tv:ro
     restart: unless-stopped
     networks:
       - media-network
