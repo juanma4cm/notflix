@@ -20,13 +20,22 @@ create-folders:
 	mkdir -p prowlarr/config
 	mkdir -p dnsmasq recyclarr diun/data
 	@if [ -d "/mnt/media" ]; then \
-		printf "$(GREEN)Disco externo detectado en /mnt/media — creando estructura y symlinks...$(RESET)\n"; \
-		mkdir -p /mnt/media/movies /mnt/media/tv /mnt/media/downloads; \
-		ln -sfn /mnt/media/movies  movies; \
-		ln -sfn /mnt/media/tv      tv; \
-		ln -sfn /mnt/media/downloads downloads; \
+		printf "$(GREEN)Disco de medios detectado en /mnt/media — creando estructura y symlinks...$(RESET)\n"; \
+		mkdir -p /mnt/media/movies /mnt/media/tv; \
+		ln -sfn /mnt/media/movies movies; \
+		ln -sfn /mnt/media/tv     tv; \
 	else \
-		printf "$(YELLOW)/mnt/media no encontrado — creando directorios locales...$(RESET)\n"; \
+		printf "$(YELLOW)/mnt/media no encontrado — usando subdirectorios locales para movies/tv...$(RESET)\n"; \
+		mkdir -p downloads/movies downloads/tv; \
+		ln -sfn downloads/movies movies; \
+		ln -sfn downloads/tv     tv; \
+	fi
+	@if [ -d "/mnt/downloads" ]; then \
+		printf "$(GREEN)Disco de descargas detectado en /mnt/downloads — creando estructura y symlink...$(RESET)\n"; \
+		mkdir -p /mnt/downloads/movies /mnt/downloads/tv /mnt/downloads/incomplete; \
+		ln -sfn /mnt/downloads downloads; \
+	else \
+		printf "$(YELLOW)/mnt/downloads no encontrado — usando directorio local para downloads...$(RESET)\n"; \
 		mkdir -p downloads/movies downloads/tv downloads/incomplete; \
 	fi
 
