@@ -32,7 +32,7 @@ radarr:
           # Spanish Audio / Releases
           - 4b900e171accbfb172729b63323f9d5e  # Blu-ray
           - 9965a052eb87b0d10313b1cea89eb451  # HDR
-        quality_profiles:
+        assign_scores_to:
           - name: "Español HD"
             score: 500
 
@@ -60,6 +60,6 @@ sonarr:
       - trash_ids:
           - 4b900e171accbfb172729b63323f9d5e  # Blu-ray
           - 9965a052eb87b0d10313b1cea89eb451  # HDR
-        quality_profiles:
+        assign_scores_to:
           - name: "Español HD Series"
             score: 500
