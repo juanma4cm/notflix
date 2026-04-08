@@ -1,0 +1,15 @@
+{
+  "name": "Latino",
+  "includeCustomFormatWhenRenaming": true,
+  "specifications": [
+    {
+      "name": "Título: LATINO/LAT",
+      "implementation": "ReleaseTitleSpecification",
+      "negate": false,
+      "required": true,
+      "fields": {
+        "value": "\\b(LATINO|LAT)\\b"
+      }
+    }
+  ]
+}
